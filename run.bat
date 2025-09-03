@@ -1,1 +1,1 @@
-py -3.13 ./main.py
+py -3.13 ./autoupdater.py
