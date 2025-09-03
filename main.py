@@ -19,6 +19,7 @@ THIRTYMINUTE = 30
 
 # Opens the links json and assigns the respective stuff
 with open("links.json", "r") as f:
+    # For some reason, Windows wants to really be different when opening files... here is a check to ensure cross compat.
     ioText = ""
     if type(f) != TextIOWrapper:
         ioText = f.read()
@@ -48,14 +49,19 @@ class MentorScriptApp():
 
 
     def sendPrompt(self, toPrompt: str):
+        """Opens up a prompt that shows: what the prompt is for, and the ability to stop the song"""
+
+        ## WINDOW
         popup = tk.Toplevel(self.root)
         popup.title("Popup!")
         popup.geometry("700x150")
         popup.configure(bg="#92B7D6")
 
+        ## LABEL
         label = tk.Label(popup, text=toPrompt, bg="#92B7D6", fg="black", font=("Helvetica", 30), wraplength=600)
         label.pack(pady=20)
 
+        ## BUTTON
         def callback():
             popup.destroy()
             self.currentSong.stop()
@@ -86,10 +92,12 @@ class MentorScriptApp():
                 b = max(0, b - 2)
             self.backgroundColor = (r, g, b)
             bg_hex = '#{:02x}{:02x}{:02x}'.format(*self.backgroundColor)
+            # Makes the background of both the window and the center text to match
             self.root.configure(bg=bg_hex)
             self.centerText.configure(bg=bg_hex)
 
     def timeCount(self):
+        """Reads the time and see if the minutes match HOURLY or THIRTYMINUTE"""
         while True:
             time.sleep(1)
             if not self.stillRunning:
