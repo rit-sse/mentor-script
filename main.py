@@ -9,6 +9,7 @@ import random
 import pygame
 import pyautogui
 import webbrowser
+import csv
 
 MENTORSCRIPT_EVERYHOUR_URL = ""
 MENTORSCRIPT_EVERY30_URL = ""
@@ -17,6 +18,11 @@ MENTOR_TEXT = ""
 
 HOURLY = 55
 THIRTYMINUTE = 30
+
+#CSV Format: id,name,email,exam checked out,class_number,date checked out
+CSV_READER = ""
+CSV_WRITER = ""
+CSV_APPENDER = ""
 
 # Opens the links json and assigns the respective stuff
 with open("links.json", "r") as f:
@@ -31,6 +37,36 @@ with open("links.json", "r") as f:
     MENTORSCRIPT_EVERY30_URL = filein["MENTORSCRIPT_EVERY30_URL"]
     SONG_FOLDER = filein["SONG_FOLDER"]
     MENTOR_TEXT = filein["MENTOR_TEXT"]
+
+# Assigns access to read the csv
+with open("database.csv", "r", newline="") as csvfile:
+    CSV_READER = csv.DictReader(csvfile)
+
+    # Test: Print each row in the CSV file (works!)
+    for row in CSV_READER:
+        print(row["name"], row["id"]) # Each row is a list of strings
+        print(row)
+
+# Assigns access to edit the csv
+with open("database.csv", "w", newline="") as csvfile:
+    fieldnames = ["id", "name", "email", "exam_checked_out", "class_number", "date_checked_out"]
+    CSV_WRITER = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    # Test: Print each row in the CSV file (don't work bc I'm using with open() wrong)
+    CSV_WRITER.writeheader()
+    CSV_WRITER.writerow({"id": "www2222", "name": "potatolover", "email": "potatowww2222@rit.edu"})
+    for row in CSV_READER:
+        if row["id"] == "www2222":
+            CSV_WRITER.writerow({"exam_checked_out": "how to eat water", "class_number": "WAT-1212", "date_checked_out": "09/07/2025"})
+
+
+# Assigns access to add data to the csv
+with open("database.csv", "a", newline="") as csvfile:
+    CSV_APPENDER = csv.writer(csvfile)
+
+    # Test: Write some stuff into the csv (works!)
+    CSV_APPENDER.writerow(["aha1234", "Addison Asu", "randomemail4321@rit.edu"])
+    CSV_APPENDER.writerow(["rrr4321", "Ryan Reynolds", "randomemail4321@rit.edu", "How to eat dirt the right way", "POTATO-420","09/07/2025"])
 
 # Debugging purposes to make sure all songs are gathered properly
 print(os.listdir(SONG_FOLDER))
@@ -47,6 +83,14 @@ class MentorScriptApp():
     appThreads: dict[str, threading.Thread] = {}
     currentSong: pygame.mixer.Sound
     stillRunning: bool = True
+
+    def add_to_csv(name,id,email):
+        """Adds a new person to the csv file"""
+        csv_append.writerow([name, id, email])
+    
+    def edit_to_csv(name,id,email):
+        """Adds a new person to the csv file"""
+        csv_append.writerow([name, id, email])
 
 
     def sendPrompt(self, toPrompt: str):
@@ -71,6 +115,34 @@ class MentorScriptApp():
         ok_button = tk.Button(popup, highlightbackground="#6499C6",text="OK", command=callback, font=("Helvetica", 25))
         ok_button.pack(pady=10)
 
+    def readID(self, id):
+        """"""
+        while True:
+            if not self.stillRunning:
+                break
+            pass
+            # compare ID to database
+            if csv_reader == 3:
+                pass
+
+            # if ID not in database(csv file?), then open popup to create new section in database(new line in csv file)
+                # Database holds data of who has what exam checked out
+                # Popup has two inputs:
+                    # Student name (First and Last)
+                    # Student rit email
+                    # SUBMIT button
+            
+            # if exam already checked out:
+                # name of checked out exam
+                # check in exam? prompt
+                # SUBMIT button
+
+            # if exam not checked out, if/when the ID is in the database, open a popup with three inputs:
+                # name of exam that is being checked out
+                # class number of the exam (ex: SWEN-124)
+                # SUBMIT button
+
+        
 
     def rainbowBackground(self):
         """This runs through as a thread where it changes the background"""
