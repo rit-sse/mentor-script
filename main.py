@@ -84,13 +84,13 @@ class MentorScriptApp():
     currentSong: pygame.mixer.Sound
     stillRunning: bool = True
 
-    def add_to_csv(name,id,email):
+    def add_to_csv(id, name, email):
         """Adds a new person to the csv file"""
-        csv_append.writerow([name, id, email])
+        CSV_APPENDER.writerow([id, name, email])
     
-    def edit_to_csv(name,id,email):
-        """Adds a new person to the csv file"""
-        csv_append.writerow([name, id, email])
+    def edit_to_csv(id, name, email, exam, class_number, date):
+        """edit a person's data in the csv"""
+        CSV_WRITER.writerow({"id": id, "name": name, "email": email, "exam_checked_out": exam, "class_number": class_number, "date_checked_out": date})
 
 
     def sendPrompt(self, toPrompt: str):
