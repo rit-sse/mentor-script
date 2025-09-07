@@ -84,15 +84,6 @@ class MentorScriptApp():
     currentSong: pygame.mixer.Sound
     stillRunning: bool = True
 
-    def add_to_csv(id, name, email):
-        """Adds a new person to the csv file"""
-        CSV_APPENDER.writerow([id, name, email])
-    
-    def edit_to_csv(id, name, email, exam, class_number, date):
-        """edit a person's data in the csv"""
-        CSV_WRITER.writerow({"id": id, "name": name, "email": email, "exam_checked_out": exam, "class_number": class_number, "date_checked_out": date})
-
-
     def sendPrompt(self, toPrompt: str):
         """Opens up a prompt that shows: what the prompt is for, and the ability to stop the song"""
 
@@ -114,33 +105,54 @@ class MentorScriptApp():
 
         ok_button = tk.Button(popup, highlightbackground="#6499C6",text="OK", command=callback, font=("Helvetica", 25))
         ok_button.pack(pady=10)
+        popup.protocol("WM_DELETE_WINDOW", callback)
+    
 
     def readID(self, id):
-        """"""
-        while True:
-            if not self.stillRunning:
-                break
-            pass
-            # compare ID to database
-            if csv_reader == 3:
+        """This takes in an id and opens up different prompts depending on the status of the id"""
+
+        # Functions to access CSV
+        def search_csv(id):
+            """search for a person in the csv, and if one is found return their information"""
+            for row in CSV_READER:
+                if row["id"] == id:
+                    return row
+
+        def add_to_csv(id, name, email):
+            """Adds a new person to the csv file"""
+            CSV_APPENDER.writerow([id, name, email])
+        
+        def edit_to_csv(id, name, email, exam, class_number, date):
+            """edit a person's data in the csv"""
+            for row in CSV_READER:
+                if row["id"] == id:
+                    CSV_WRITER.writerow({"id": id, "name": name, "email": email, "exam_checked_out": exam, "class_number": class_number, "date_checked_out": date})
+    
+        # check if ID is in the csv
+        if search_csv(id) != "": # id is in the csv
+            if search_csv(id)[3] != "": # the exam is the 3rd index in the list of strings, if that index is returned "" there is no exam checked out
+                # if exam already checked out:
+                    #Popup:
+                        # (name of checked out exam) output
+                        # [check in exam?] prompt input
+                        # SUBMIT button
+                pass
+            elif search_csv(id)[3] == "":
+                # if exam not checked out, if/when the ID is in the database, open a popup with three inputs:
+                    # [name of exam that is being checked out] input
+                    # [class number of the exam (ex: SWEN-124)] input
+                    # SUBMIT button
                 pass
 
+        else: # id is not in the csv
             # if ID not in database(csv file?), then open popup to create new section in database(new line in csv file)
                 # Database holds data of who has what exam checked out
                 # Popup has two inputs:
                     # Student name (First and Last)
                     # Student rit email
                     # SUBMIT button
+            pass
             
-            # if exam already checked out:
-                # name of checked out exam
-                # check in exam? prompt
-                # SUBMIT button
-
-            # if exam not checked out, if/when the ID is in the database, open a popup with three inputs:
-                # name of exam that is being checked out
-                # class number of the exam (ex: SWEN-124)
-                # SUBMIT button
 
         
 
