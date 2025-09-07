@@ -62,6 +62,7 @@ class MentorScriptApp():
 
         ok_button = tk.Button(popup, highlightbackground="#6499C6",text="OK", command=callback, font=("Helvetica", 25))
         ok_button.pack(pady=10)
+        popup.protocol("WM_DELETE_WINDOW", callback)
 
 
     def rainbowBackground(self):
