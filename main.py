@@ -108,7 +108,7 @@ class MentorScriptApp():
         popup.protocol("WM_DELETE_WINDOW", callback)
     
 
-    def readID(self, id):
+    def readID(self, input_id):
         """This takes in an id and opens up different prompts depending on the status of the id"""
 
         # Functions to access CSV
@@ -122,26 +122,54 @@ class MentorScriptApp():
             """Adds a new person to the csv file"""
             CSV_APPENDER.writerow([id, name, email])
         
-        def edit_to_csv(id, name, email, exam, class_number, date):
+        def edit_csv(id="", name="", email="", exam="", class_number="", date=""):
             """edit a person's data in the csv"""
             for row in CSV_READER:
                 if row["id"] == id:
                     CSV_WRITER.writerow({"id": id, "name": name, "email": email, "exam_checked_out": exam, "class_number": class_number, "date_checked_out": date})
     
         # check if ID is in the csv
-        if search_csv(id) != "": # id is in the csv
-            if search_csv(id)[3] != "": # the exam is the 3rd index in the list of strings, if that index is returned "" there is no exam checked out
+        if search_csv(input_id) != "": # id is in the csv
+            if search_csv(input_id)[3] != "": # the exam is the 3rd index in the list of strings, if that index is returned "" there is no exam checked out
                 # if exam already checked out:
-                    #Popup:
+                    # Popup:
                         # (name of checked out exam) output
                         # [check in exam?] prompt input
                         # SUBMIT button
-                pass
-            elif search_csv(id)[3] == "":
-                # if exam not checked out, if/when the ID is in the database, open a popup with three inputs:
-                    # [name of exam that is being checked out] input
-                    # [class number of the exam (ex: SWEN-124)] input
-                    # SUBMIT button
+                checked_out_exam = search_csv(id)[3]
+
+
+                ## WINDOW
+                check_in_popup = tk.Toplevel(self.root)
+                check_in_popup.title("Check_In_Popup!")
+                check_in_popup.configure(bg="#92B7D6")
+
+                ## LABEL
+                exam_label = tk.Label(check_in_popup, text="Checked-Out Exam: " + checked_out_exam, bg="#92B7D6", fg="black", font=("Helvetica", 30), wraplength=600)
+                exam_label.pack(pady=20)
+
+                ## RADIOBUTTON
+                check_in_radiobutton = tk.Radiobutton(check_in_popup, highlightbackground="#6499C6", text="Check in exam?", font=("Helvetica", 25))
+                check_in_radiobutton.pack(pady=10)
+
+                ## BUTTON
+                def callback():
+                    check_in_popup.destroy()
+                
+                def submit():
+                    edit_csv(id=input_id, exam="", class_number="", date="") # removes exam, class_number, and date for the specified person
+
+                submit_button = tk.Button(check_in_popup, highlightbackground="#6499C6", text="SUBMIT", command=submit, font=("Helvetica", 25))
+                submit_button.pack(pady=10)
+
+                check_in_popup.protocol("WM_DELETE_WINDOW", callback)
+                
+            elif search_csv(input_id)[3] == "":
+                # if exam not checked out, if/when the ID is in the database:
+                    # Popup:
+                        # [name of exam that is being checked out] input
+                        # [class number of the exam (ex: SWEN-124)] input
+                        # SUBMIT button
                 pass
 
         else: # id is not in the csv
