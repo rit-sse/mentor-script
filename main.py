@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import random
 import pygame
+import pyautogui
 import webbrowser
 
 MENTORSCRIPT_EVERYHOUR_URL = ""
@@ -19,6 +20,7 @@ THIRTYMINUTE = 30
 
 # Opens the links json and assigns the respective stuff
 with open("links.json", "r") as f:
+    # For some reason, Windows wants to really be different when opening files... here is a check to ensure cross compat.
     ioText = ""
     if type(f) != TextIOWrapper:
         ioText = f.read()
@@ -48,17 +50,23 @@ class MentorScriptApp():
 
 
     def sendPrompt(self, toPrompt: str):
+        """Opens up a prompt that shows: what the prompt is for, and the ability to stop the song"""
+
+        ## WINDOW
         popup = tk.Toplevel(self.root)
         popup.title("Popup!")
-        popup.geometry("700x150")
         popup.configure(bg="#92B7D6")
 
+        ## LABEL
         label = tk.Label(popup, text=toPrompt, bg="#92B7D6", fg="black", font=("Helvetica", 30), wraplength=600)
         label.pack(pady=20)
 
+        ## BUTTON
+        self.currentSong = pygame.mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
+        self.currentSong.play()
         def callback():
             popup.destroy()
-            self.currentSong.stop()
+            pygame.mixer.fadeout(400)
 
         ok_button = tk.Button(popup, highlightbackground="#6499C6",text="OK", command=callback, font=("Helvetica", 25))
         ok_button.pack(pady=10)
@@ -86,10 +94,12 @@ class MentorScriptApp():
                 b = max(0, b - 2)
             self.backgroundColor = (r, g, b)
             bg_hex = '#{:02x}{:02x}{:02x}'.format(*self.backgroundColor)
+            # Makes the background of both the window and the center text to match
             self.root.configure(bg=bg_hex)
             self.centerText.configure(bg=bg_hex)
 
     def timeCount(self):
+        """Reads the time and see if the minutes match HOURLY or THIRTYMINUTE"""
         while True:
             time.sleep(1)
             if not self.stillRunning:
@@ -98,40 +108,57 @@ class MentorScriptApp():
             minute = now.minute
             if minute == HOURLY and self.sentOutHourly != True:
                 print("Sent out the hourly!")
-                self.currentSong = pygame.mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
-                self.currentSong.play()
                 self.sendPrompt("Hourly headcount!")
                 webbrowser.open(MENTORSCRIPT_EVERYHOUR_URL, new=1)
                 self.sentOutHourly = True
             if minute == THIRTYMINUTE and self.sentOutThirty != True:
                 print("Sent out the thirty!")
-                self.currentSong = pygame.mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
-                self.currentSong.play()
                 self.sendPrompt("The thirty minute mark! It is TRASH 30!!!")
                 webbrowser.open(MENTORSCRIPT_EVERY30_URL, new=1)
                 self.sentOutThirty = True
             if not minute == THIRTYMINUTE and not minute == HOURLY:
                 self.sentOutHourly = False
                 self.sentOutThirty = False
+    
+    def mouseMoveIdle(self):
+        while True:
+            for i in range(1, 10):
+                time.sleep(0.2)
+                pyautogui.moveRel(0, -1)
+                time.sleep(0.2)
+                pyautogui.moveRel(1, 0)
+                time.sleep(0.2)
+                pyautogui.moveRel(0, 1)
+                time.sleep(0.2)
+                pyautogui.moveRel(-1, 0)
+            time.sleep(60 * 5)
 
     def backgroundThreads(self):
         """Creates a thread for the processes that need to be threaded, and adds them to appThreads."""
         self.appThreads["rainbowThread"] = threading.Thread(target=self.rainbowBackground, args=())
         self.appThreads["timeCounter"] = threading.Thread(target=self.timeCount, args=())
+        self.appThreads["idleMover"] = threading.Thread(target=self.mouseMoveIdle, args=())
 
         # Run threads
         self.appThreads["rainbowThread"].start()
         self.appThreads["timeCounter"].start()
+        self.appThreads["idleMover"].start()
 
     def shutdown_procedure(self):
         """Shuts down the application by closing off all threads"""
         self.stillRunning = False
 
+    def keyRelease(self, event):
+        """Tests for any key releases"""
+        print("LOL!", event.keysym)
+        if event.keysym == 'd':
+            self.sendPrompt("prompt test")
+
     def __init__(self):
         """Initalizes the app."""
         self.root = tk.Tk()
         self.root.title("Mentor Script")
-        self.root.attributes("-fullscreen", 1)
+        self.root.state("zoomed")
         self.root.configure(bg="white")
         self.centerText = tk.Label(self.root, text=MENTOR_TEXT, bg="white", fg="black", font=("Helvetica", 32))
         self.backgroundThreads()
@@ -140,6 +167,7 @@ class MentorScriptApp():
     
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self.shutdown_procedure)
+        self.root.bind("<KeyRelease>", self.keyRelease)
         self.root.mainloop()
 
 if __name__ == "__main__":
