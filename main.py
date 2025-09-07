@@ -55,7 +55,6 @@ class MentorScriptApp():
         ## WINDOW
         popup = tk.Toplevel(self.root)
         popup.title("Popup!")
-        popup.geometry("700x150")
         popup.configure(bg="#92B7D6")
 
         ## LABEL
@@ -123,11 +122,16 @@ class MentorScriptApp():
     
     def mouseMoveIdle(self):
         while True:
-            pyautogui.moveRel(0, -1)
-            pyautogui.moveRel(1, 0)
-            pyautogui.moveRel(0, 1)
-            pyautogui.moveRel(-1, 0)
-            time.sleep(60 * 10)
+            for i in range(1, 10):
+                time.sleep(0.2)
+                pyautogui.moveRel(0, -1)
+                time.sleep(0.2)
+                pyautogui.moveRel(1, 0)
+                time.sleep(0.2)
+                pyautogui.moveRel(0, 1)
+                time.sleep(0.2)
+                pyautogui.moveRel(-1, 0)
+            time.sleep(60 * 5)
 
     def backgroundThreads(self):
         """Creates a thread for the processes that need to be threaded, and adds them to appThreads."""
