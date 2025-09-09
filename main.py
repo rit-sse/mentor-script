@@ -19,11 +19,6 @@ MENTOR_TEXT = ""
 HOURLY = 55
 THIRTYMINUTE = 30
 
-#CSV Format: id,name,email,exam checked out,class_number,date checked out
-CSV_READER = ""
-CSV_WRITER = ""
-CSV_APPENDER = ""
-
 # Opens the links json and assigns the respective stuff
 with open("links.json", "r") as f:
     # For some reason, Windows wants to really be different when opening files... here is a check to ensure cross compat.
@@ -38,35 +33,6 @@ with open("links.json", "r") as f:
     SONG_FOLDER = filein["SONG_FOLDER"]
     MENTOR_TEXT = filein["MENTOR_TEXT"]
 
-# Assigns access to read the csv
-with open("database.csv", "r", newline="") as csvfile:
-    CSV_READER = csv.DictReader(csvfile)
-
-    # Test: Print each row in the CSV file (works!)
-    for row in CSV_READER:
-        print(row["name"], row["id"]) # Each row is a list of strings
-        print(row)
-
-# Assigns access to edit the csv
-with open("database.csv", "w", newline="") as csvfile:
-    fieldnames = ["id", "name", "email", "exam_checked_out", "class_number", "date_checked_out"]
-    CSV_WRITER = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-    # Test: Print each row in the CSV file (don't work bc I'm using with open() wrong)
-    CSV_WRITER.writeheader()
-    CSV_WRITER.writerow({"id": "www2222", "name": "potatolover", "email": "potatowww2222@rit.edu"})
-    for row in CSV_READER:
-        if row["id"] == "www2222":
-            CSV_WRITER.writerow({"exam_checked_out": "how to eat water", "class_number": "WAT-1212", "date_checked_out": "09/07/2025"})
-
-
-# Assigns access to add data to the csv
-with open("database.csv", "a", newline="") as csvfile:
-    CSV_APPENDER = csv.writer(csvfile)
-
-    # Test: Write some stuff into the csv (works!)
-    CSV_APPENDER.writerow(["aha1234", "Addison Asu", "randomemail4321@rit.edu"])
-    CSV_APPENDER.writerow(["rrr4321", "Ryan Reynolds", "randomemail4321@rit.edu", "How to eat dirt the right way", "POTATO-420","09/07/2025"])
 
 # Debugging purposes to make sure all songs are gathered properly
 print(os.listdir(SONG_FOLDER))
@@ -114,20 +80,49 @@ class MentorScriptApp():
         # Functions to access CSV
         def search_csv(id):
             """search for a person in the csv, and if one is found return their information"""
-            for row in CSV_READER:
-                if row["id"] == id:
-                    return row
+            with open("database.csv", "r", newline="") as csvfile:
+                csv_reader = csv.DictReader(csvfile)
+
+                for row in csv_reader:
+                    if row["id"] == id:
+                        return row
 
         def add_to_csv(id, name, email):
             """Adds a new person to the csv file"""
-            CSV_APPENDER.writerow([id, name, email])
-        
+            
         def edit_csv(id="", name="", email="", exam="", class_number="", date=""):
-            """edit a person's data in the csv"""
-            for row in CSV_READER:
-                if row["id"] == id:
-                    CSV_WRITER.writerow({"id": id, "name": name, "email": email, "exam_checked_out": exam, "class_number": class_number, "date_checked_out": date})
-    
+            """edit a person's data in the csv, or adds a new person if data is not present"""
+            #CSV Format: id,name,email,exam checked out,class_number,date checked out
+            csv_reader = ""
+            csv_writer = ""
+
+            csv_rows = ""
+
+            # Reads and holds the current rows in the csv file
+            with open("database.csv", "r", newline="") as csvfile:
+                csv_reader = csv.DictReader(csvfile)
+                csv_rows = list(csv_reader)
+
+            new_row = {"id": id, "name": name, "email": email, "exam_checked_out": exam, "class_number": class_number, "date_checked_out": date}
+
+            # edits a person's data if they exist in the csv, otherwise, adds the new person's data to the csv.
+            person_found = False
+            for row in csv_rows:
+                if row["id"] == new_row["id"]:
+                    row.update(new_row) # update existing person's data
+                    person_found = True
+                    break
+            if not person_found:
+                csv_rows.append(new_row) # add new person's data
+
+            # adds the new data to the csv file
+            with open("database.csv", "w", newline="") as csvfile:
+                fieldnames = ["id", "name", "email", "exam_checked_out", "class_number", "date_checked_out"]
+                csv_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                csv_writer.writeheader()
+                csv_writer.writerow(csv_rows)
+
         # check if ID is in the csv
         if search_csv(input_id) != "": # id is in the csv
             if search_csv(input_id)[3] != "": # the exam is the 3rd index in the list of strings, if that index is returned "" there is no exam checked out
