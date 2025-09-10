@@ -129,7 +129,7 @@ class MentorScriptApp():
                         # [check in exam?] prompt input
                         # SUBMIT button
                 checked_out_exam = search_csv(id)[3]
-
+                check_in = True
 
                 ## WINDOW
                 check_in_popup = tk.Toplevel(self.root)
@@ -141,7 +141,7 @@ class MentorScriptApp():
                 exam_label.pack(pady=20)
 
                 ## RADIOBUTTON
-                check_in_radiobutton = tk.Radiobutton(check_in_popup, highlightbackground="#6499C6", text="Check in exam?", font=("Helvetica", 25))
+                check_in_radiobutton = tk.Radiobutton(check_in_popup, highlightbackground="#6499C6", variable=check_in, text="Check in exam?", font=("Helvetica", 25))
                 check_in_radiobutton.pack(pady=10)
 
                 ## BUTTON
@@ -149,7 +149,8 @@ class MentorScriptApp():
                     check_in_popup.destroy()
                 
                 def submit():
-                    edit_csv(id=input_id, exam="", class_number="", date="") # removes exam, class_number, and date for the specified person
+                    if check_in:
+                        edit_csv(id=input_id, exam="", class_number="", date="") # removes exam, class_number, and date for the specified person
 
                 submit_button = tk.Button(check_in_popup, highlightbackground="#6499C6", text="SUBMIT", command=submit, font=("Helvetica", 25))
                 submit_button.pack(pady=10)
@@ -162,16 +163,69 @@ class MentorScriptApp():
                         # [name of exam that is being checked out] input
                         # [class number of the exam (ex: SWEN-124)] input
                         # SUBMIT button
-                pass
+                exam_checking_out = ""
+                class_num = ""
+
+                ## WINDOW
+                check_in_popup = tk.Toplevel(self.root)
+                check_in_popup.title("Check_In_Popup!")
+                check_in_popup.configure(bg="#92B7D6")
+
+                ## ENTRY
+                exam_entry = tk.Entry(check_in_popup, text="Exam Checking Out: ", bg="#92B7D6", fg="black", font=("Helvetica", 30), wraplength=600)
+                exam_entry.pack(pady=20)
+
+                ## ENTRY
+                class_num_entry = tk.Entry(check_in_popup, text="Class Number: ", bg="#92B7D6", fg="black", font=("Helvetica", 30), wraplength=600)
+                class_num_entry.pack(pady=20)
+
+                ## BUTTON
+                def callback():
+                    check_in_popup.destroy()
+                
+                def submit():
+                    if check_in:
+                        edit_csv(id=input_id, exam=exam_checking_out, class_number=class_num, date="") # removes exam, class_number, and date for the specified person
+
+                submit_button = tk.Button(check_in_popup, highlightbackground="#6499C6", text="SUBMIT", command=submit, font=("Helvetica", 25))
+                submit_button.pack(pady=10)
+
+                check_in_popup.protocol("WM_DELETE_WINDOW", callback)
 
         else: # id is not in the csv
             # if ID not in database(csv file?), then open popup to create new section in database(new line in csv file)
-                # Database holds data of who has what exam checked out
+                # csv holds data of who has what exam checked out
                 # Popup has two inputs:
                     # Student name (First and Last)
                     # Student rit email
                     # SUBMIT button
-            pass
+            student_name = ""
+            student_email = ""
+
+            ## WINDOW
+            check_in_popup = tk.Toplevel(self.root)
+            check_in_popup.title("Check_In_Popup!")
+            check_in_popup.configure(bg="#92B7D6")
+
+            ## ENTRY
+            name_entry = tk.Entry(check_in_popup, text="Student Name: ", bg="#92B7D6", fg="black", font=("Helvetica", 30), textvariable=student_name, wraplength=600)
+            name_entry.pack(pady=20)
+
+            ## ENTRY
+            email_entry = tk.Entry(check_in_popup, text="Student RIT Email: ", bg="#92B7D6", fg="black", font=("Helvetica", 30), textvariable=student_email, wraplength=600)
+            email_entry.pack(pady=20)
+
+            ## BUTTON
+            def callback():
+                check_in_popup.destroy()
+            
+            def submit():
+                edit_csv(id=input_id, name=student_name, email=student_email) # removes exam, class_number, and date for the specified person
+
+            submit_button = tk.Button(check_in_popup, highlightbackground="#6499C6", text="SUBMIT", command=submit, font=("Helvetica", 25))
+            submit_button.pack(pady=10)
+
+            check_in_popup.protocol("WM_DELETE_WINDOW", callback)
             
 
     def rainbowBackground(self):
