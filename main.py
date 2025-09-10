@@ -72,11 +72,11 @@ class MentorScriptApp():
         ok_button = tk.Button(popup, highlightbackground="#6499C6",text="OK", command=callback, font=("Helvetica", 25))
         ok_button.pack(pady=10)
         popup.protocol("WM_DELETE_WINDOW", callback)
-    
+
 
     def readID(self, input_id):
         """This takes in an id and opens up different prompts depending on the status of the id"""
-
+        print("I'm RUNNING!!!")
         # Functions to access CSV
         def search_csv(id):
             """search for a person in the csv, and if one is found return their information"""
@@ -86,12 +86,9 @@ class MentorScriptApp():
                 for row in csv_reader:
                     if row["id"] == id:
                         return row
-
-        def add_to_csv(id, name, email):
-            """Adds a new person to the csv file"""
             
-        def edit_csv(id="", name="", email="", exam="", class_number="", date=""):
-            """edit a person's data in the csv, or adds a new person if data is not present"""
+        def edit_csv(id, name="", email="", exam="", class_number="", date=""):
+            """edit a person's data in the csv, or adds a new person if data is not present. id is NOT optional"""
             #CSV Format: id,name,email,exam checked out,class_number,date checked out
             csv_reader = ""
             csv_writer = ""
@@ -176,8 +173,6 @@ class MentorScriptApp():
                     # SUBMIT button
             pass
             
-
-        
 
     def rainbowBackground(self):
         """This runs through as a thread where it changes the background"""
@@ -277,6 +272,7 @@ class MentorScriptApp():
         self.root.bind("<KeyRelease>", self.keyRelease)
         self.root.mainloop()
 
+    
 if __name__ == "__main__":
     app = MentorScriptApp()
     app.run()
