@@ -127,7 +127,7 @@ class MentorScriptApp():
         # check if ID is in the csv
         if search_csv(input_id) != None: # if id is in the csv, then prompt for exam
             if (search_csv(input_id)["exam_checked_out"] is not None) and (search_csv(input_id)["exam_checked_out"] is not ''): # if an exam is in the database, then prompt to check it in
-                print("PRINTING CHECKOUT")
+                print("CHECKING IN")
                 # if exam already checked out:
                     # Popup:
                         # (name of checked out exam) output
@@ -135,7 +135,7 @@ class MentorScriptApp():
                         # SUBMIT button
                 checked_out_exam = search_csv(input_id)["exam_checked_out"]
                 students_data = search_csv(input_id)
-                check_in = True
+                check_in = tk.BooleanVar()
 
                 ## WINDOW
                 check_in_popup = tk.Toplevel(self.root)
@@ -147,7 +147,7 @@ class MentorScriptApp():
                 exam_label.pack(pady=20)
 
                 ## CHECKBUTTON
-                check_in_checkbutton = tk.Checkbutton(check_in_popup, highlightbackground="#6499C6", variable=check_in, text="Check in exam?", font=("Helvetica", 25))
+                check_in_checkbutton = tk.Checkbutton(check_in_popup, highlightbackground="#6499C6", variable=check_in, onvalue=True, offvalue=False, text="Check in exam?", font=("Helvetica", 25))
                 check_in_checkbutton.pack(pady=10)
 
                 ## BUTTON
@@ -155,7 +155,7 @@ class MentorScriptApp():
                     check_in_popup.destroy()
 
                 def submit():
-                    if check_in:
+                    if check_in.get():
                         edit_csv(id=input_id, name=students_data["name"], email=students_data["email"], exam="", class_number="", date="") # removes exam, class_number, and date for the specified person
                     check_in_popup.destroy()
 
@@ -375,8 +375,4 @@ class MentorScriptApp():
     
 if __name__ == "__main__":
     app = MentorScriptApp()
-    app.readID(12)
-    app.readID(1232111214567)
-    app.readID(12367)
-    app.readID(12367)
     app.run()
