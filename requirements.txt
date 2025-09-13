@@ -1,2 +1,3 @@
 pygame
 pyautogui
+wakepy # This is to allow the python script to keep running and NOT shut down!!
