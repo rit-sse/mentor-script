@@ -1,3 +1,5 @@
 #!/bin/bash
 
-python3 ./autoupdater.py
+git checkout main
+git pull origin main
+python3.9 ./main.py
