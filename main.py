@@ -143,7 +143,7 @@ class MentorScriptApp():
         # Run threads
         self.appThreads["rainbowThread"].start()
         self.appThreads["timeCounter"].start()
-        self.appThreads["idleMover"].start()
+        # self.appThreads["idleMover"].start()
 
     def shutdown_procedure(self):
         """Shuts down the application by closing off all threads"""
@@ -159,7 +159,8 @@ class MentorScriptApp():
         """Initalizes the app."""
         self.root = tk.Tk()
         self.root.title("Mentor Script")
-        self.root.state("zoomed")
+        # self.root.state("zoomed")
+        self.root.attributes("-fullscreen", True)
         self.root.configure(bg="white")
         self.centerText = tk.Label(self.root, text=MENTOR_TEXT, bg="white", fg="black", font=("Helvetica", 32))
         self.backgroundThreads()
