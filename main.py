@@ -78,7 +78,7 @@ class MentorScriptApp():
         while True:
             time.sleep(.05)
             if not self.stillRunning:
-                break
+                return
             r, g, b = self.backgroundColor
             # Simple rainbow shift: cycle through R->G->B
             if r == 255 and g < 255 and b == 0:
@@ -104,7 +104,7 @@ class MentorScriptApp():
         while True:
             time.sleep(1)
             if not self.stillRunning:
-                break
+                return
             now = datetime.now()
             minute = now.minute
             if minute == HOURLY and self.sentOutHourly != True:
@@ -120,34 +120,20 @@ class MentorScriptApp():
             if not minute == THIRTYMINUTE and not minute == HOURLY:
                 self.sentOutHourly = False
                 self.sentOutThirty = False
-    
-    def mouseMoveIdle(self):
-        while True:
-            for i in range(1, 10):
-                time.sleep(0.2)
-                pyautogui.moveRel(0, -1)
-                time.sleep(0.2)
-                pyautogui.moveRel(1, 0)
-                time.sleep(0.2)
-                pyautogui.moveRel(0, 1)
-                time.sleep(0.2)
-                pyautogui.moveRel(-1, 0)
-            time.sleep(60 * 5)
 
     def backgroundThreads(self):
         """Creates a thread for the processes that need to be threaded, and adds them to appThreads."""
         self.appThreads["rainbowThread"] = threading.Thread(target=self.rainbowBackground, args=())
         self.appThreads["timeCounter"] = threading.Thread(target=self.timeCount, args=())
-        self.appThreads["idleMover"] = threading.Thread(target=self.mouseMoveIdle, args=())
 
         # Run threads
         self.appThreads["rainbowThread"].start()
         self.appThreads["timeCounter"].start()
-        # self.appThreads["idleMover"].start()
 
     def shutdown_procedure(self):
         """Shuts down the application by closing off all threads"""
         self.stillRunning = False
+        self.root.destroy()
 
     def keyRelease(self, event):
         """Tests for any key releases"""
@@ -160,12 +146,13 @@ class MentorScriptApp():
         self.root = tk.Tk()
         self.root.title("Mentor Script")
         # self.root.state("zoomed")
-        self.root.attributes("-fullscreen", True)
         self.root.configure(bg="white")
+        self.root.geometry(f'{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}')
         self.centerText = tk.Label(self.root, text=MENTOR_TEXT, bg="white", fg="black", font=("Helvetica", 32))
         self.backgroundThreads()
         pygame.mixer.init()
         self.centerText.place(relx=0.5, rely=0.5, anchor="center")
+        self.root.focus_force()
     
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self.shutdown_procedure)
