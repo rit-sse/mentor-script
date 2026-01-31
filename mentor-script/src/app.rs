@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
-use eframe::Frame;
+use eframe::{egui, Frame};
 use crate::config::Config;
 use crate::scheduler::{minutes_until_next_check, CheckType};
 
@@ -56,6 +56,15 @@ impl MentorApp {
         }
     }
 
+    fn background_color(&self) -> egui::Color32 {
+        match self.state {
+            ReminderState::Idle => egui::Color32::from_rgb(30, 30, 30),
+            ReminderState::Pending(_) => egui::Color32::from_rgb(80, 70, 20),
+            ReminderState::Active(_) => egui::Color32::from_rgb(90, 30, 30),
+            ReminderState::Snoozed(_) => egui::Color32::from_rgb(40, 50, 70),
+        }
+    }
+
 }
 
 impl eframe::App for MentorApp {
@@ -66,7 +75,9 @@ impl eframe::App for MentorApp {
         let _minute = now.minute();
 
 
-        CentralPanel::default().show(ctx, |ui| {
+        CentralPanel::default()
+            .frame(egui::Frame::new().fill(self.background_color()))
+            .show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(20.0);
                 ui.heading(format!(
