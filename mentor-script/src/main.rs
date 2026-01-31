@@ -36,11 +36,13 @@ fn main() {
         dithering: false,
     };
 
-    eframe::run_native(
+    if let Err(e) = eframe::run_native(
         "Mentor Reminder",
         options,
         Box::new(|_cc| Ok(Box::new(MentorApp::new(config)))),
-    ).unwrap();
+    ) {
+        eprintln!("eframe failed: {e}");
+    }
 
     eprintln!("Mentor Script Stopped!");
 }
