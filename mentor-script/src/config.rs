@@ -7,6 +7,7 @@ pub struct Config {
     pub mentor_text: String,
     pub hourly_link: String,
     pub thirty_link: String,
+    pub song_urls: Vec<String>,
 }
 
 impl Config {

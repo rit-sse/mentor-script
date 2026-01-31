@@ -1,8 +1,11 @@
 use chrono::{DateTime, Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
 use eframe::{egui, Frame};
+use rodio::{OutputStream, OutputStreamBuilder};
 use crate::config::Config;
-use crate::scheduler::{minutes_until_next_check, CheckType};
+use crate::scheduler::{check_time, minutes_until_next_check, CheckType};
+use crate::sound;
+use crate::sound::pick_random_song;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ReminderState {
@@ -16,14 +19,19 @@ pub struct MentorApp {
     config: Config,
     state: ReminderState,
     snooze_until: Option<DateTime<Local>>,
+    _audio_stream: OutputStream,
 }
 
 impl MentorApp {
     pub fn new(config: Config) -> Self {
+        let stream =
+            OutputStreamBuilder::open_default_stream().unwrap();
+
         Self {
             config,
             state: ReminderState::Idle,
             snooze_until: None,
+            _audio_stream: stream,
         }
     }
 
@@ -39,21 +47,21 @@ impl MentorApp {
             }
         }
 
-        let (next_check, minutes_until) = minutes_until_next_check(now);
-
-        // Pending window for next reminder
+        // Pending check before time hits the exact moment
+        let (_, minutes_until) = minutes_until_next_check(now);
         if minutes_until <= 5 && minutes_until > 0 {
             if matches!(self.state, ReminderState::Idle | ReminderState::Pending(_)) {
+                let (next_check, _) = minutes_until_next_check(now);
                 self.state = ReminderState::Pending(next_check);
             }
         }
 
         // Moment reminder goes off
-        if minutes_until == 0 {
+       if let Some(check) = check_time() {
            if !matches!(self.state, ReminderState::Active(_)) {
-               self.state = ReminderState::Active(next_check);
+               self.state = ReminderState::Active(check);
            }
-        }
+       }
     }
 
     fn background_color(&self) -> egui::Color32 {
@@ -109,6 +117,11 @@ impl eframe::App for MentorApp {
                         if ui.button("Snooze 5 min").clicked() {
                             self.snooze_until = Some(Local::now() + chrono::Duration::minutes(5));
                             self.state = ReminderState::Snoozed(check);
+                        }
+
+
+                        if let Some(url) = pick_random_song(&self.config.song_urls) {
+                            sound::play_sound(&self._audio_stream, url);
                         }
                     }
 

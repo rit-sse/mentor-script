@@ -6,6 +6,7 @@ use crate::config::Config;
 mod scheduler;
 mod config;
 mod app;
+mod sound;
 
 fn main() {
     let config = Config::load();
