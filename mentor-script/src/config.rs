@@ -11,7 +11,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load() -> Self {
+    pub fn load() -> Option<Self> {
         let exe_dir: PathBuf = std::env::current_exe()
             .expect("Failed to get executable path")
             .parent()

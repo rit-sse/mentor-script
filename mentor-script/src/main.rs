@@ -9,7 +9,9 @@ mod app;
 mod sound;
 
 fn main() {
-    let config = Config::load();
+    let config = Config::load().expect("Failed to load config");
+
+    eprintln!("Starting Mentor Script GUI!");
 
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
@@ -39,4 +41,6 @@ fn main() {
         options,
         Box::new(|_cc| Ok(Box::new(MentorApp::new(config)))),
     ).unwrap();
+
+    eprintln!("Mentor Script Stopped!");
 }
