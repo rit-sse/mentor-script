@@ -17,12 +17,14 @@ jobs:
 
       - name: Build release
         run: cargo build --release
+        working-directory: mentor-script
 
       - name: Strip binary
-        run: strip target/release/mentor-reminder
+        run: strip target/release/mentor-script
+        working-directory: mentor-script
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mentor-reminder-linux-x86_64
-          path: target/release/mentor-reminder
+          path: mentor-script/target/release/mentor-script
