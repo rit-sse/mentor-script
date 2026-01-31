@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 import os
 import random
-import pygame
+from pygame import mixer
 import pyautogui
 import webbrowser
 
@@ -45,7 +45,7 @@ class MentorScriptApp():
     sentOutThirty: bool = False
 
     appThreads: dict[str, threading.Thread] = {}
-    currentSong: pygame.mixer.Sound
+    currentSong: mixer.Sound
     stillRunning: bool = True
 
 
@@ -62,11 +62,11 @@ class MentorScriptApp():
         label.pack(pady=20)
 
         ## BUTTON
-        self.currentSong = pygame.mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
+        self.currentSong = mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
         self.currentSong.play()
         def callback():
             popup.destroy()
-            pygame.mixer.fadeout(400)
+            mixer.fadeout(400)
 
         ok_button = tk.Button(popup, highlightbackground="#6499C6",text="OK", command=callback, font=("Helvetica", 25))
         ok_button.pack(pady=10)
@@ -78,7 +78,7 @@ class MentorScriptApp():
         while True:
             time.sleep(.05)
             if not self.stillRunning:
-                break
+                return
             r, g, b = self.backgroundColor
             # Simple rainbow shift: cycle through R->G->B
             if r == 255 and g < 255 and b == 0:
@@ -104,9 +104,13 @@ class MentorScriptApp():
         while True:
             time.sleep(1)
             if not self.stillRunning:
-                break
+                return
             now = datetime.now()
             minute = now.minute
+            hour = now.hour
+
+            if hour < 10 and 18 < hour:
+                return
             if minute == HOURLY and self.sentOutHourly != True:
                 print("Sent out the hourly!")
                 self.sendPrompt("Hourly headcount!")
@@ -120,34 +124,20 @@ class MentorScriptApp():
             if not minute == THIRTYMINUTE and not minute == HOURLY:
                 self.sentOutHourly = False
                 self.sentOutThirty = False
-    
-    def mouseMoveIdle(self):
-        while True:
-            for i in range(1, 10):
-                time.sleep(0.2)
-                pyautogui.moveRel(0, -1)
-                time.sleep(0.2)
-                pyautogui.moveRel(1, 0)
-                time.sleep(0.2)
-                pyautogui.moveRel(0, 1)
-                time.sleep(0.2)
-                pyautogui.moveRel(-1, 0)
-            time.sleep(60 * 5)
 
     def backgroundThreads(self):
         """Creates a thread for the processes that need to be threaded, and adds them to appThreads."""
         self.appThreads["rainbowThread"] = threading.Thread(target=self.rainbowBackground, args=())
         self.appThreads["timeCounter"] = threading.Thread(target=self.timeCount, args=())
-        self.appThreads["idleMover"] = threading.Thread(target=self.mouseMoveIdle, args=())
 
         # Run threads
         self.appThreads["rainbowThread"].start()
         self.appThreads["timeCounter"].start()
-        self.appThreads["idleMover"].start()
 
     def shutdown_procedure(self):
         """Shuts down the application by closing off all threads"""
         self.stillRunning = False
+        self.root.destroy()
 
     def keyRelease(self, event):
         """Tests for any key releases"""
@@ -159,12 +149,14 @@ class MentorScriptApp():
         """Initalizes the app."""
         self.root = tk.Tk()
         self.root.title("Mentor Script")
-        self.root.state("zoomed")
+        # self.root.state("zoomed")
         self.root.configure(bg="white")
+        self.root.geometry(f'{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}')
         self.centerText = tk.Label(self.root, text=MENTOR_TEXT, bg="white", fg="black", font=("Helvetica", 32))
         self.backgroundThreads()
-        pygame.mixer.init()
+        mixer.init()
         self.centerText.place(relx=0.5, rely=0.5, anchor="center")
+        self.root.focus_force()
     
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self.shutdown_procedure)

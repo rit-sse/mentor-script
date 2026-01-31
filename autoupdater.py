@@ -8,4 +8,4 @@ subprocess.run(['git', 'checkout', 'main'], check=True)
 subprocess.run(['git', 'pull'], check=True)
 
 # Then, run the actual mentor script
-subprocess.run(['python3.11', './main.py'], check=True)
+subprocess.run(['python3', './main.py'], check=True)
