@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -10,8 +11,16 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Self {
-        let raw = fs::read_to_string("links.json")
-            .expect("Failed to read links.json");
+        let exe_dir: PathBuf = std::env::current_exe()
+            .expect("Failed to get executable path")
+            .parent()
+            .expect("Executable must live in a directory")
+            .to_path_buf();
+
+        let path = exe_dir.join("links.json");
+
+        let raw = fs::read_to_string(&path)
+        .unwrap();
 
         serde_json::from_str(&raw)
             .expect("Invalid JSON in links.json")

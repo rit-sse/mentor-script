@@ -1,5 +1,6 @@
 use chrono::Timelike;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CheckType {
     HalfHour,
     Hour,

@@ -1,6 +1,42 @@
+use chrono::{Local, Timelike};
+use eframe::egui::{CentralPanel, Context, ViewportBuilder};
+use eframe::{egui, Frame, HardwareAcceleration};
+use crate::app::MentorApp;
+use crate::config::Config;
+
 mod scheduler;
 mod config;
+mod app;
 
 fn main() {
-    println!("Hello, world!");
+    let config = Config::load();
+
+    let options = eframe::NativeOptions {
+        viewport: ViewportBuilder::default()
+            .with_title("Mentor Reminder")
+            .with_inner_size([420.0, 200.0])
+            .with_resizable(false)
+            .with_always_on_top()
+            .with_decorations(true),
+        vsync: true,
+        multisampling: 0,
+        depth_buffer: 0,
+        stencil_buffer: 0,
+        hardware_acceleration: HardwareAcceleration::Off,
+        renderer: Default::default(),
+        run_and_return: false,
+        event_loop_builder: None,
+        window_builder: None,
+        shader_version: None,
+        centered: true,
+        persist_window: false,
+        persistence_path: None,
+        dithering: false,
+    };
+
+    eframe::run_native(
+        "Mentor Reminder",
+        options,
+        Box::new(|_cc| Ok(Box::new(MentorApp::new(config)))),
+    ).unwrap();
 }
