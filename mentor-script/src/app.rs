@@ -137,6 +137,15 @@ impl eframe::App for MentorApp {
                         ui.heading("Time to check in");
                         ui.label(format!("{:?}", check));
 
+                        if ui.button("Open Form").clicked() {
+                            let url = match check {
+                                CheckType::Hour => &self.config.hourly_link,
+                                CheckType::HalfHour => &self.config.thirty_link,
+                            };
+
+                            let _ = webbrowser::open(url);
+                        }
+
                         if ui.button("Checked").clicked() {
                             if let Some(sink) = self.current_sink.take() {
                                 sink.stop();

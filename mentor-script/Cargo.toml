@@ -11,3 +11,4 @@ eframe = "0.33.3"
 rodio = "0.21.1"
 rand = "0.9.2"
 reqwest = {  version = "0.13.1", features = ["blocking"] }
+webbrowser = "1.0.6"
