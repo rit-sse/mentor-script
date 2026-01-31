@@ -24,7 +24,7 @@ fn main() -> ! {
         multisampling: 0,
         depth_buffer: 0,
         stencil_buffer: 0,
-        hardware_acceleration: HardwareAcceleration::Off,
+        hardware_acceleration: HardwareAcceleration::Preferred,
         renderer: Default::default(),
         run_and_return: true,
         event_loop_builder: None,
