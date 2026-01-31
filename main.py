@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 import os
 import random
-import pygame
+from pygame import mixer
 import pyautogui
 import webbrowser
 
@@ -45,7 +45,7 @@ class MentorScriptApp():
     sentOutThirty: bool = False
 
     appThreads: dict[str, threading.Thread] = {}
-    currentSong: pygame.mixer.Sound
+    currentSong: mixer.Sound
     stillRunning: bool = True
 
 
@@ -62,11 +62,11 @@ class MentorScriptApp():
         label.pack(pady=20)
 
         ## BUTTON
-        self.currentSong = pygame.mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
+        self.currentSong = mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
         self.currentSong.play()
         def callback():
             popup.destroy()
-            pygame.mixer.fadeout(400)
+            mixer.fadeout(400)
 
         ok_button = tk.Button(popup, highlightbackground="#6499C6",text="OK", command=callback, font=("Helvetica", 25))
         ok_button.pack(pady=10)
@@ -107,6 +107,10 @@ class MentorScriptApp():
                 return
             now = datetime.now()
             minute = now.minute
+            hour = now.hour
+
+            if hour < 10 and 18 < hour:
+                return
             if minute == HOURLY and self.sentOutHourly != True:
                 print("Sent out the hourly!")
                 self.sendPrompt("Hourly headcount!")
@@ -150,7 +154,7 @@ class MentorScriptApp():
         self.root.geometry(f'{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}')
         self.centerText = tk.Label(self.root, text=MENTOR_TEXT, bg="white", fg="black", font=("Helvetica", 32))
         self.backgroundThreads()
-        pygame.mixer.init()
+        mixer.init()
         self.centerText.place(relx=0.5, rely=0.5, anchor="center")
         self.root.focus_force()
     
