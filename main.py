@@ -9,6 +9,7 @@ import random
 from pygame import mixer
 import pyautogui
 import webbrowser
+from wakepy import keep
 
 MENTORSCRIPT_EVERYHOUR_URL = ""
 MENTORSCRIPT_EVERY30_URL = ""
@@ -164,5 +165,6 @@ class MentorScriptApp():
         self.root.mainloop()
 
 if __name__ == "__main__":
-    app = MentorScriptApp()
-    app.run()
+    with keep.running():
+        app = MentorScriptApp()
+        app.run()
