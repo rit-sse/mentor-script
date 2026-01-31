@@ -101,6 +101,7 @@ impl MentorApp {
 
 impl eframe::App for MentorApp {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
+
         self.update_state();
         if ctx.input(|i| i.key_pressed(egui::Key::A)) {
             self.state = ReminderState::Active(CheckType::Hour);
@@ -177,6 +178,7 @@ impl eframe::App for MentorApp {
         });
 
         ctx.request_repaint_after(std::time::Duration::from_secs(1));
+
     }
 
 

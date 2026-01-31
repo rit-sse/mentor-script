@@ -8,7 +8,7 @@ mod config;
 mod app;
 mod sound;
 
-fn main() {
+fn main() -> ! {
     let config = Config::load().expect("Failed to load config");
 
     eprintln!("Starting Mentor Script GUI!");
@@ -26,7 +26,7 @@ fn main() {
         stencil_buffer: 0,
         hardware_acceleration: HardwareAcceleration::Off,
         renderer: Default::default(),
-        run_and_return: false,
+        run_and_return: true,
         event_loop_builder: None,
         window_builder: None,
         shader_version: None,
@@ -45,4 +45,6 @@ fn main() {
     }
 
     eprintln!("Mentor Script Stopped!");
+
+    std::process::exit(0);
 }
