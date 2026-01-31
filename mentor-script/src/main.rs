@@ -16,7 +16,7 @@ fn main() -> ! {
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
             .with_title("Mentor Reminder")
-            .with_inner_size([420.0, 200.0])
+            .with_inner_size([640.0, 420.0])
             .with_resizable(false)
             .with_always_on_top()
             .with_decorations(true),
