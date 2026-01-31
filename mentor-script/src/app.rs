@@ -20,6 +20,7 @@ pub struct MentorApp {
     state: ReminderState,
     snooze_until: Option<DateTime<Local>>,
     _audio_stream: OutputStream,
+    trigger_consumed: bool,
 }
 
 impl MentorApp {
@@ -32,6 +33,7 @@ impl MentorApp {
             state: ReminderState::Idle,
             snooze_until: None,
             _audio_stream: stream,
+            trigger_consumed: false,
         }
     }
 
@@ -45,6 +47,10 @@ impl MentorApp {
                 self.snooze_until = None;
                 self.state = ReminderState::Idle;
             }
+        }
+
+        if check_time().is_none() {
+            self.trigger_consumed = false;
         }
 
         // Pending check before time hits the exact moment
