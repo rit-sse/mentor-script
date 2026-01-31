@@ -7,7 +7,7 @@ pub enum CheckType {
 }
 
 pub fn check_time() -> Option<CheckType> {
-    let now = chrono::Local::now();
+    let now = Local::now();
     let minute = now.minute();
 
     match minute {

@@ -1,11 +1,11 @@
+use crate::config::Config;
+use crate::scheduler::{check_time, minutes_until_next_check, CheckType};
+use crate::sound::Audio;
 use chrono::{DateTime, Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
 use eframe::{egui, Frame};
-use rodio::{OutputStream, OutputStreamBuilder, Sink};
-use crate::config::Config;
-use crate::scheduler::{check_time, minutes_until_next_check, CheckType};
-use crate::sound;
-use crate::sound::pick_random_song;
+use rand::seq::IndexedRandom;
+use rodio::Sink;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ReminderState {
@@ -20,23 +20,20 @@ pub struct MentorApp {
     state: ReminderState,
     last_state: ReminderState,
     snooze_until: Option<DateTime<Local>>,
-    _audio_stream: OutputStream,
     trigger_consumed: bool,
-    current_sink: Option<Sink>
+    audio: Option<Audio>,
+    current_sink: Option<Sink>,
 }
 
 impl MentorApp {
     pub fn new(config: Config) -> Self {
-        let stream =
-            OutputStreamBuilder::open_default_stream().unwrap();
-
         Self {
             config,
             state: ReminderState::Idle,
             last_state: ReminderState::Idle,
             snooze_until: None,
-            _audio_stream: stream,
             trigger_consumed: false,
+            audio: None,
             current_sink: None,
         }
     }
@@ -67,24 +64,28 @@ impl MentorApp {
         }
 
         // Moment reminder goes off
-       if let Some(check) = check_time() {
-           if !matches!(self.state, ReminderState::Active(_)) {
-               self.state = ReminderState::Active(check);
-           }
-       }
-
+        if let Some(check) = check_time() {
+            if !matches!(self.state, ReminderState::Active(_)) {
+                self.state = ReminderState::Active(check);
+            }
+        }
 
 
         if self.last_state != self.state {
             if matches!(self.state, ReminderState::Active(_)) {
-                if let Some(url) = pick_random_song(&self.config.song_urls) {
-                    self.current_sink = Some(sound::play_sound(&self._audio_stream, url));
+                if self.audio.is_none() {
+                    self.audio = Audio::new();
+                }
 
+                if let (Some(audio), Some(path)) =
+                    (&self.audio, self.config.songs.choose(&mut rand::rng()).cloned())
+                {
+                    self.current_sink = audio.play_file(path);
                 }
             }
-            self.last_state = self.state
-        }
 
+            self.last_state = self.state;
+        }
     }
 
     fn background_color(&self) -> egui::Color32 {
