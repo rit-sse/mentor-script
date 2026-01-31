@@ -1,55 +1,70 @@
-use chrono::{Local, Timelike};
+use chrono::{DateTime, Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
 use eframe::Frame;
 use crate::config::Config;
-use crate::scheduler::{check_time, CheckType};
+use crate::scheduler::{minutes_until_next_check, CheckType};
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum ReminderState {
+    Idle,
+    Pending(CheckType), // upcoming
+    Active(CheckType), // currently watching
+    Snoozed(CheckType),
+}
 
 pub struct MentorApp {
     config: Config,
-    last_trigger: Option<CheckType>,
+    state: ReminderState,
+    snooze_until: Option<DateTime<Local>>,
 }
 
 impl MentorApp {
     pub fn new(config: Config) -> Self {
         Self {
             config,
-            last_trigger: None,
+            state: ReminderState::Idle,
+            snooze_until: None,
         }
     }
-}
 
-impl eframe::App for MentorApp {
-    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+    fn update_state(&mut self) {
         let now = Local::now();
-        let minute = now.minute();
 
-        if let Some(check) = check_time() {
-            if self.last_trigger != Some(check) {
-                match check {
-                    CheckType::HalfHour => {
-                        println!("30-minute check!");
-                    }
-                    CheckType::Hour => {
-                        println!("Hourly check!");
-                    }
-                }
-
-                self.last_trigger = Some(check);
+        if let Some(until) = self.snooze_until {
+            if now < until {
+                return;
+            } else {
+                self.snooze_until = None;
+                self.state = ReminderState::Idle;
             }
         }
 
-        // Resetting trigger once minute passes
-        if minute != 30 && minute != 55 {
-            self.last_trigger = None;
+        let (next_check, minutes_until) = minutes_until_next_check(now);
+
+        // Pending window for next reminder
+        if minutes_until <= 5 && minutes_until > 0 {
+            if matches!(self.state, ReminderState::Idle | ReminderState::Pending(_)) {
+                self.state = ReminderState::Pending(next_check);
+            }
         }
 
-        let next_check = if minute < 30 {
-            30 - minute
-        } else if minute < 55 {
-            55 - minute
-        } else {
-            60 - minute + 30
-        };
+        // Moment reminder goes off
+        if minutes_until == 0 {
+           if !matches!(self.state, ReminderState::Active(_)) {
+               self.state = ReminderState::Active(next_check);
+           }
+        }
+    }
+
+}
+
+impl eframe::App for MentorApp {
+    fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
+        self.update_state();
+
+        let now = Local::now();
+        let _minute = now.minute();
+
 
         CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
@@ -61,10 +76,35 @@ impl eframe::App for MentorApp {
                 ));
 
                 ui.add_space(10.0);
-                ui.label(format!(
-                    "Next check in {} minutes",
-                    next_check
-                ));
+
+                match self.state {
+                    ReminderState::Idle => {
+                        ui.label("All caught up!");
+                    }
+
+                    ReminderState::Pending(check) => {
+                        ui.label("Upcoming check");
+                        ui.label(format!("{:?} in a few minutes", check));
+                    }
+
+                    ReminderState::Active(check) => {
+                        ui.heading("Time to check in");
+                        ui.label(format!("{:?}", check));
+
+                        if ui.button("Checked").clicked() {
+                            self.state = ReminderState::Idle;
+                        }
+
+                        if ui.button("Snooze 5 min").clicked() {
+                            self.snooze_until = Some(Local::now() + chrono::Duration::minutes(5));
+                            self.state = ReminderState::Snoozed(check);
+                        }
+                    }
+
+                    ReminderState::Snoozed(_) => {
+                        ui.label("Snoozed ⏰");
+                    }
+                }
 
                 ui.add_space(20.0);
                 ui.separator();
@@ -74,5 +114,7 @@ impl eframe::App for MentorApp {
 
         ctx.request_repaint_after(std::time::Duration::from_secs(1));
     }
+
+
 }
 
