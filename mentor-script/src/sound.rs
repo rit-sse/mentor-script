@@ -9,7 +9,8 @@ pub fn pick_random_song(urls: &[String]) -> Option<&String> {
     urls.choose(&mut rng)
 }
 
-pub fn play_sound(stream: &OutputStream, url: &str) {
+/// Returns a sink. That's it.
+pub fn play_sound(stream: &OutputStream, url: &str) -> Sink{
     let response = reqwest::blocking::get(url).unwrap();
     let bytes = response.bytes().unwrap();
 
@@ -18,5 +19,5 @@ pub fn play_sound(stream: &OutputStream, url: &str) {
 
     let sink = Sink::connect_new(stream.mixer());
     sink.append(source);
-    sink.detach();
+    sink // sink
 }
