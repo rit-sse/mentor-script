@@ -45,3 +45,4 @@ jobs:
         with:
           files: |
             dist/mentor-script-x86_64-linux
+            LICENSE
