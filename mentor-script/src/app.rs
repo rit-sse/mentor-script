@@ -9,6 +9,7 @@ use crate::sound::Audio;
 use chrono::{Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
 use eframe::{egui, Frame};
+use egui::Color32;
 use rand::seq::IndexedRandom;
 use rodio::Sink;
 
@@ -66,7 +67,10 @@ impl MentorApp {
         // Moment reminder goes off
         if let Some(check) = check_time() {
             if !matches!(self.state, ReminderState::Active(_)) {
-                self.state = ReminderState::Active(check);
+                if !self.trigger_consumed {
+                    self.state = ReminderState::Active(check);
+                    self.trigger_consumed = true;
+                }
             }
         }
 
@@ -112,7 +116,6 @@ impl MentorApp {
 
 impl eframe::App for MentorApp {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
-
         self.update_state();
         if ctx.input(|i| i.key_pressed(egui::Key::A)) {
             self.state = ReminderState::Active(CheckType::HalfHour);
@@ -122,60 +125,72 @@ impl eframe::App for MentorApp {
         let now = Local::now();
         let _minute = now.minute();
 
-        let time= ctx.input(|i| i.time); // variable time for dynamic color
+        let time = ctx.input(|i| i.time); // variable time for dynamic color
 
         CentralPanel::default()
             .frame(egui::Frame::new().fill(self.background_color(time)))
             .show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.add_space(20.0);
-                ui.heading(format!(
-                    "{:02}:{:02}",
-                    now.hour(),
-                    now.minute(),
-                ));
+                ui.vertical_centered(|ui| {
+                    ui.add_space(20.0);
+                    ui.heading(format!(
+                        "{:02}:{:02}",
+                        now.hour(),
+                        now.minute(),
+                    ));
 
-                ui.add_space(10.0);
+                    ui.add_space(10.0);
 
-                match self.state {
-                    ReminderState::Idle => {
-                        ui.label("All caught up!");
-                    }
-
-                    ReminderState::Pending(check) => {
-                        ui.label("Upcoming check");
-                        ui.label(format!("{} coming up!", check));
-                    }
-
-                    ReminderState::Active(check) => {
-                        ui.heading("Time to check in");
-                        ui.label(format!("{}!", check));
-
-                        if ui.button("Open Form").clicked() {
-                            let url = match check {
-                                CheckType::Hour => &self.config.hourly_link,
-                                CheckType::HalfHour => &self.config.thirty_link,
-                            };
-
-                            let _ = webbrowser::open(url);
+                    match self.state {
+                        ReminderState::Idle => {
+                            ui.label("All caught up!");
                         }
 
-                        if ui.button("Checked").clicked() {
-                            if let Some(sink) = self.current_sink.take() {
-                                sink.stop();
+                        ReminderState::Pending(check) => {
+                            ui.label("Upcoming check");
+                            ui.label(format!("{} coming up!", check));
+                        }
+
+                        ReminderState::Active(check) => {
+                            ui.heading("Time to check in");
+                            ui.label(format!("{}!", check));
+
+                            if ui.button("Open Form").clicked() {
+                                let url = match check {
+                                    CheckType::Hour => &self.config.hourly_link,
+                                    CheckType::HalfHour => &self.config.thirty_link,
+                                };
+
+                                let _ = webbrowser::open(url);
                             }
-                            self.state = ReminderState::Idle;
-                        }
 
+                            if ui.button("Checked").clicked() {
+                                if let Some(sink) = self.current_sink.take() {
+                                    sink.stop();
+                                }
+                                self.state = ReminderState::Idle;
+                            }
+                        }
                     }
 
-                }
+                    ui.add_space(20.0);
 
-                ui.add_space(20.0);
-                ui.separator();
-                ui.label(&self.config.mentor_text);
+                    let rect = ctx.content_rect();
+                    let center = rect.center();
+                    ui.allocate_ui_at_rect(
+                        egui::Rect::from_center_size(
+                            center,
+                            egui::vec2(300.0, 80.0),
+                        ),
+                        |ui| {
+                            ui.label(egui::RichText::new(&self.config.mentor_text)
+                                .color(Color32::from_hex("#23F123").unwrap())
+                            );
+                        },
+                    );
+
+
+                });
             });
-        });
 
         let repaint_delay = match self.state {
             ReminderState::Idle => Duration::from_millis(33),      // smooth breathing
@@ -184,9 +199,9 @@ impl eframe::App for MentorApp {
         };
 
         ctx.request_repaint_after(repaint_delay);
-
     }
-
-
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        self.audio = None; // Safely drop audio stream
+    }
 }
 
