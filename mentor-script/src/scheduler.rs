@@ -2,6 +2,8 @@
 //!
 //! Determines when reminders should trigger and calculates time until next check.
 
+use std::fmt;
+use std::fmt::Formatter;
 use chrono::{DateTime, Local, Timelike};
 
 /// Type of check-in reminder
@@ -11,6 +13,16 @@ pub enum CheckType {
     HalfHour,
     /// Hourly check (triggers at :55)
     Hour,
+}
+
+impl fmt::Display for CheckType {
+   /// Implements display output for each CheckType for better formatting.
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            CheckType::Hour => write!(f, "One hour check"),
+            CheckType::HalfHour => write!(f, "Half hour check"),
+        }
+    }
 }
 
 /// Returns the type of check if the current time matches a reminder trigger

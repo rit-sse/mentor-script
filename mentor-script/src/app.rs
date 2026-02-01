@@ -2,10 +2,11 @@
 //!
 //! Manages the reminder state machine and renders the user interface.
 
+use std::time::Duration;
 use crate::config::Config;
 use crate::scheduler::{check_time, minutes_until_next_check, CheckType};
 use crate::sound::Audio;
-use chrono::{DateTime, Local, Timelike};
+use chrono::{Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
 use eframe::{egui, Frame};
 use rand::seq::IndexedRandom;
@@ -20,8 +21,6 @@ pub enum ReminderState {
     Pending(CheckType),
     /// Reminder is currently active, waiting for user action
     Active(CheckType),
-    /// User has snoozed the reminder
-    Snoozed(CheckType),
 }
 
 /// Main application struct managing GUI and state
@@ -29,7 +28,6 @@ pub struct MentorApp {
     config: Config,
     state: ReminderState,
     last_state: ReminderState,
-    snooze_until: Option<DateTime<Local>>,
     trigger_consumed: bool,
     audio: Option<Audio>,
     current_sink: Option<Sink>,
@@ -41,7 +39,6 @@ impl MentorApp {
             config,
             state: ReminderState::Idle,
             last_state: ReminderState::Idle,
-            snooze_until: None,
             trigger_consumed: false,
             audio: None,
             current_sink: None,
@@ -52,14 +49,6 @@ impl MentorApp {
     fn update_state(&mut self) {
         let now = Local::now();
 
-        if let Some(until) = self.snooze_until {
-            if now < until {
-                return;
-            } else {
-                self.snooze_until = None;
-                self.state = ReminderState::Idle;
-            }
-        }
 
         if check_time().is_none() {
             self.trigger_consumed = false;
@@ -99,14 +88,24 @@ impl MentorApp {
         }
     }
 
-    /// Returns the background color based on current state
-    fn background_color(&self) -> egui::Color32 {
-        match self.state {
-            ReminderState::Idle => egui::Color32::from_rgb(30, 30, 30),
-            ReminderState::Pending(_) => egui::Color32::from_rgb(80, 70, 20),
-            ReminderState::Active(_) => egui::Color32::from_rgb(90, 30, 30),
-            ReminderState::Snoozed(_) => egui::Color32::from_rgb(40, 50, 70),
-        }
+    /// Returns a dynamic, breathing RGB effect background
+    fn background_color(&self, t: f64) -> egui::Color32 {
+        let speed = 0.2;
+        let phase = t * speed;
+
+        let r = (phase.sin() * 0.5 + 0.5) as f32;
+        let g = ((phase + 2.0).sin() * 0.5 + 0.5) as f32;
+        let b = ((phase + 4.0).sin() * 0.5 + 0.5) as f32;
+
+        // soften it
+        let base = 30.0;
+        let range = 40.0;
+
+        egui::Color32::from_rgb(
+            (base + r * range) as u8,
+            (base + g * range) as u8,
+            (base + b * range) as u8,
+        )
     }
 
 }
@@ -116,16 +115,17 @@ impl eframe::App for MentorApp {
 
         self.update_state();
         if ctx.input(|i| i.key_pressed(egui::Key::A)) {
-            self.state = ReminderState::Active(CheckType::Hour);
+            self.state = ReminderState::Active(CheckType::HalfHour);
             self.trigger_consumed = true;
         }
 
         let now = Local::now();
         let _minute = now.minute();
 
+        let time= ctx.input(|i| i.time); // variable time for dynamic color
 
         CentralPanel::default()
-            .frame(egui::Frame::new().fill(self.background_color()))
+            .frame(egui::Frame::new().fill(self.background_color(time)))
             .show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(20.0);
@@ -144,12 +144,12 @@ impl eframe::App for MentorApp {
 
                     ReminderState::Pending(check) => {
                         ui.label("Upcoming check");
-                        ui.label(format!("{:?} in a few minutes", check));
+                        ui.label(format!("{} coming up!", check));
                     }
 
                     ReminderState::Active(check) => {
                         ui.heading("Time to check in");
-                        ui.label(format!("{:?}", check));
+                        ui.label(format!("{}!", check));
 
                         if ui.button("Open Form").clicked() {
                             let url = match check {
@@ -165,22 +165,10 @@ impl eframe::App for MentorApp {
                                 sink.stop();
                             }
                             self.state = ReminderState::Idle;
-
-                        }
-
-                        if ui.button("Snooze 5 min").clicked() {
-                            if let Some(sink) = self.current_sink.take() {
-                                sink.stop();
-                            }
-                            self.snooze_until = Some(Local::now() + chrono::Duration::minutes(5));
-                            self.state = ReminderState::Snoozed(check);
                         }
 
                     }
 
-                    ReminderState::Snoozed(_) => {
-                        ui.label("Snoozed ⏰");
-                    }
                 }
 
                 ui.add_space(20.0);
@@ -189,7 +177,13 @@ impl eframe::App for MentorApp {
             });
         });
 
-        ctx.request_repaint_after(std::time::Duration::from_secs(1));
+        let repaint_delay = match self.state {
+            ReminderState::Idle => Duration::from_millis(33),      // smooth breathing
+            ReminderState::Pending(_) => Duration::from_millis(100),
+            ReminderState::Active(_) => Duration::from_millis(500),
+        };
+
+        ctx.request_repaint_after(repaint_delay);
 
     }
 

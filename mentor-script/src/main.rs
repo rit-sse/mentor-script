@@ -20,7 +20,7 @@ fn main() -> ! {
 
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
-            .with_title("Mentor Reminder")
+            .with_title("Mentor Script")
             .with_inner_size([640.0, 420.0])
             .with_resizable(false)
             .with_always_on_top()
@@ -42,7 +42,7 @@ fn main() -> ! {
     };
 
     if let Err(e) = eframe::run_native(
-        "Mentor Reminder",
+        "Mentor Script",
         options,
         Box::new(|_cc| Ok(Box::new(MentorApp::new(config)))),
     ) {
