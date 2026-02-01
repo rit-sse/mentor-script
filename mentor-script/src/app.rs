@@ -9,7 +9,7 @@ use crate::sound::Audio;
 use chrono::{Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
 use eframe::{egui, Frame};
-use egui::Color32;
+use egui::{Color32, RichText};
 use rand::seq::IndexedRandom;
 use rodio::Sink;
 
@@ -46,44 +46,47 @@ impl MentorApp {
         }
     }
 
+    // In module crate::app
+    // ... existing code ...
+    // (other methods)
+
     /// Updates the reminder state based on current time and plays audio when transitioning to Active
     fn update_state(&mut self) {
+        const PENDING_WINDOW_MINUTES: i64 = 5;
+
         let now = Local::now();
+        let current_trigger = check_time();
 
-
-        if check_time().is_none() {
+        // Reset consumption once we're no longer on a trigger minute.
+        if current_trigger.is_none() {
             self.trigger_consumed = false;
         }
 
-        // Pending check before time hits the exact moment
-        let (_, minutes_until) = minutes_until_next_check(now);
-        if minutes_until <= 5 && minutes_until > 0 {
-            if matches!(self.state, ReminderState::Idle | ReminderState::Pending(_)) {
-                let (next_check, _) = minutes_until_next_check(now);
-                self.state = ReminderState::Pending(next_check);
+        // Pending check shortly before the trigger moment.
+        let (next_check, minutes_until) = minutes_until_next_check(now);
+        let in_pending_window = (1..=PENDING_WINDOW_MINUTES).contains(&minutes_until);
+        if in_pending_window && matches!(self.state, ReminderState::Idle | ReminderState::Pending(_)) {
+            self.state = ReminderState::Pending(next_check);
+        }
+
+        // Moment reminder goes off.
+        if let Some(check) = current_trigger {
+            let is_already_active = matches!(self.state, ReminderState::Active(_));
+            if !is_already_active && !self.trigger_consumed {
+                self.state = ReminderState::Active(check);
+                self.trigger_consumed = true;
             }
         }
 
-        // Moment reminder goes off
-        if let Some(check) = check_time() {
-            if !matches!(self.state, ReminderState::Active(_)) {
-                if !self.trigger_consumed {
-                    self.state = ReminderState::Active(check);
-                    self.trigger_consumed = true;
-                }
-            }
-        }
-
-
+        // React to state transitions.
         if self.last_state != self.state {
             if matches!(self.state, ReminderState::Active(_)) {
-                if self.audio.is_none() {
-                    self.audio = Audio::new();
-                }
+                self.audio = self.audio.take().or_else(Audio::new);
 
-                if let (Some(audio), Some(path)) =
-                    (&self.audio, self.config.songs.choose(&mut rand::rng()).cloned())
-                {
+                if let (Some(audio), Some(path)) = (
+                    self.audio.as_ref(),
+                    self.config.songs.choose(&mut rand::rng()).cloned(),
+                ) {
                     self.current_sink = audio.play_file(path);
                 }
             }
@@ -91,6 +94,9 @@ impl MentorApp {
             self.last_state = self.state;
         }
     }
+
+    // (other methods)
+    // ... existing code ...
 
     /// Returns a dynamic, breathing RGB effect background
     fn background_color(&self, t: f64) -> egui::Color32 {
@@ -132,11 +138,11 @@ impl eframe::App for MentorApp {
             .show(ctx, |ui| {
                 ui.vertical_centered(|ui| {
                     ui.add_space(20.0);
-                    ui.heading(format!(
+                    ui.heading(RichText::new(format!(
                         "{:02}:{:02}",
                         now.hour(),
                         now.minute(),
-                    ));
+                    )).size(42.0).color(Color32::from_hex("#000000").unwrap()));
 
                     ui.add_space(10.0);
 
@@ -184,6 +190,8 @@ impl eframe::App for MentorApp {
                         |ui| {
                             ui.label(egui::RichText::new(&self.config.mentor_text)
                                 .color(Color32::from_hex("#23F123").unwrap())
+                                .strong()
+                                .size(24.0)
                             );
                         },
                     );
