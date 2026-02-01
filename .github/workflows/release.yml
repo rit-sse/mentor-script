@@ -43,6 +43,4 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/mentor-script-x86_64-linux
-            LICENSE
+          files: dist/mentor-script-x86_64-linux
