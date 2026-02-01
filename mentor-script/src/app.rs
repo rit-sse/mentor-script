@@ -1,3 +1,7 @@
+//! Main application GUI and state management
+//!
+//! Manages the reminder state machine and renders the user interface.
+
 use crate::config::Config;
 use crate::scheduler::{check_time, minutes_until_next_check, CheckType};
 use crate::sound::Audio;
@@ -7,14 +11,20 @@ use eframe::{egui, Frame};
 use rand::seq::IndexedRandom;
 use rodio::Sink;
 
+/// Current state of the reminder system
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ReminderState {
+    /// No active or upcoming reminders
     Idle,
-    Pending(CheckType), // upcoming
-    Active(CheckType), // currently watching
+    /// Reminder coming in the next 5 minutes
+    Pending(CheckType),
+    /// Reminder is currently active, waiting for user action
+    Active(CheckType),
+    /// User has snoozed the reminder
     Snoozed(CheckType),
 }
 
+/// Main application struct managing GUI and state
 pub struct MentorApp {
     config: Config,
     state: ReminderState,
@@ -38,6 +48,7 @@ impl MentorApp {
         }
     }
 
+    /// Updates the reminder state based on current time and plays audio when transitioning to Active
     fn update_state(&mut self) {
         let now = Local::now();
 
@@ -88,6 +99,7 @@ impl MentorApp {
         }
     }
 
+    /// Returns the background color based on current state
     fn background_color(&self) -> egui::Color32 {
         match self.state {
             ReminderState::Idle => egui::Color32::from_rgb(30, 30, 30),

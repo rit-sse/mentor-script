@@ -1,3 +1,8 @@
+//! Mentor Script
+//!
+//! This application displays an always-on-top GUI window that reminds users
+//! to check in at regular intervals (:30 and :55 of each hour).
+
 use eframe::egui::ViewportBuilder;
 use eframe::HardwareAcceleration;
 use crate::app::MentorApp;

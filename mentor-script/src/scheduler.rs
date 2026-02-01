@@ -1,11 +1,21 @@
+//! Scheduling logic for reminder timing
+//!
+//! Determines when reminders should trigger and calculates time until next check.
+
 use chrono::{DateTime, Local, Timelike};
 
+/// Type of check-in reminder
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CheckType {
+    /// 30-minute check (triggers at :30)
     HalfHour,
+    /// Hourly check (triggers at :55)
     Hour,
 }
 
+/// Returns the type of check if the current time matches a reminder trigger
+///
+/// Triggers at minute :30 (HalfHour) and :55 (Hour)
 pub fn check_time() -> Option<CheckType> {
     let now = Local::now();
     let minute = now.minute();
@@ -18,6 +28,9 @@ pub fn check_time() -> Option<CheckType> {
 
 }
 
+/// Calculates which check is next and how many minutes until it triggers
+///
+/// Returns (CheckType, minutes_remaining)
 pub fn minutes_until_next_check(now: DateTime<Local>) -> (CheckType, i64) {
     let m = now.minute();
     if m < 30 {
