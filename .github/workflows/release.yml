@@ -31,5 +31,17 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mentor-reminder-linux-x86_64
+          name: mentor-script-linux-x86_64
           path: mentor-script/target/release/mentor-script
+
+      - name: Prepare artifact
+        run: |
+          mkdir dist
+          cp target/release/mentor-script dist/mentor-script-x86_64-linux
+          chmod +x dist/mentor-script-x86_64-linux
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/mentor-script-x86_64-linux
