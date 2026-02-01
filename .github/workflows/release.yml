@@ -37,7 +37,7 @@ jobs:
       - name: Prepare artifact
         run: |
           mkdir dist
-          cp target/release/mentor-script dist/mentor-script-x86_64-linux
+          cp mentor-script/target/release/mentor-script dist/mentor-script-x86_64-linux
           chmod +x dist/mentor-script-x86_64-linux
 
       - name: Create GitHub Release
