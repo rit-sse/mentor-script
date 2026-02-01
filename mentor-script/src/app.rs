@@ -46,9 +46,6 @@ impl MentorApp {
         }
     }
 
-    // In module crate::app
-    // ... existing code ...
-    // (other methods)
 
     /// Updates the reminder state based on current time and plays audio when transitioning to Active
     fn update_state(&mut self) {
@@ -95,8 +92,6 @@ impl MentorApp {
         }
     }
 
-    // (other methods)
-    // ... existing code ...
 
     /// Returns a dynamic, breathing RGB effect background
     fn background_color(&self, t: f64) -> egui::Color32 {
