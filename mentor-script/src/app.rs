@@ -182,6 +182,7 @@ impl eframe::App for MentorApp {
 
                     let rect = ctx.content_rect();
                     let center = rect.center();
+                    #[allow(deprecated)]
                     ui.allocate_ui_at_rect(
                         egui::Rect::from_center_size(
                             center,
