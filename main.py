@@ -79,6 +79,11 @@ class MentorScriptApp():
             time.sleep(.05)
             if not self.stillRunning:
                 return
+            now = datetime.now()
+            minute = now.minute
+            hour = now.hour
+                
+
             r, g, b = self.backgroundColor
             # Simple rainbow shift: cycle through R->G->B
             if r == 255 and g < 255 and b == 0:
@@ -93,6 +98,17 @@ class MentorScriptApp():
                 r = min(255, r + 2)
             elif r == 255 and b > 0 and g == 0:
                 b = max(0, b - 2)
+            
+            if 17 < hour:
+                r = 17
+                g = 17
+                b = 17
+                self.centerText.configure(fg="white")
+                self.centerText.configure(text="After hours - Mentor Script is inactive")
+            else:
+                self.centerText.configure(fg="black")
+                self.centerText.configure(text=MENTOR_TEXT)
+
             self.backgroundColor = (r, g, b)
             bg_hex = '#{:02x}{:02x}{:02x}'.format(*self.backgroundColor)
             # Makes the background of both the window and the center text to match
@@ -109,7 +125,6 @@ class MentorScriptApp():
             minute = now.minute
             hour = now.hour
 
-            print(hour)
             if hour < 10 and 17 < hour:
                 return
             if minute == HOURLY and self.sentOutHourly != True:
