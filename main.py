@@ -125,8 +125,8 @@ class MentorScriptApp():
             minute = now.minute
             hour = now.hour
 
-            if hour < 10 and 17 < hour:
-                return
+            if not (hour > 10 or hour < 18):
+                continue
             if minute == HOURLY and self.sentOutHourly != True:
                 print("Sent out the hourly!")
                 self.sendPrompt("Hourly headcount!")
