@@ -4,6 +4,7 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 use serde::Deserialize;
 
 /// Application configuration loaded from config.json
@@ -64,4 +65,47 @@ impl Config {
             })
             .collect()
     }
-}
+
+    /// ```rust
+    /// Opens the "songs" folder located in the same directory as the executable.
+    ///
+    /// This function uses platform-specific commands to open the "songs" folder:
+    /// - On **Windows**, it uses the `explorer` command.
+    /// - On **macOS**, it uses the `open` command.
+    /// - On **Linux**, it uses the `xdg-open` command.
+    ///
+    /// If the platform is unsupported or an error occurs while spawning the command,
+    /// a message will be printed to the console.
+    ///
+    /// This will open the "songs" folder in the default file explorer, provided the
+    /// folder exists and the platform is supported.
+    /// ```
+    fn open_songs_folder() {
+        let mut dir = std::env::current_exe().unwrap();
+        dir.pop();
+        dir.push("songs");
+        let spawn_result = if cfg!(target_os = "windows") {
+            Command::new("explorer")
+                .arg(dir)
+                .spawn()
+        } else if cfg!(target_os = "macos") {
+            Command::new("open")
+                .arg(dir)
+                .spawn()
+        } else if cfg!(target_os = "linux") {
+            // xdg-open is a common utility on Linux to open files/urls with the default app
+            Command::new("xdg-open")
+                .arg(dir)
+                .spawn()
+        } else {
+            println!("Unsupported operating system for opening file explorer automatically.");
+            return;
+        };
+
+        if let Err(e) = spawn_result {
+            eprintln!("Failed to open songs folder: {e}");
+        }
+
+        }
+
+    }
