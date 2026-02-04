@@ -56,9 +56,10 @@ class MentorScriptApp():
         popup = tk.Toplevel(self.root)
         popup.title("Popup!")
         popup.configure(bg="#92B7D6")
+        popup.attributes('-topmost', True)
 
         ## LABEL
-        label = tk.Label(popup, text=toPrompt, bg="#92B7D6", fg="black", font=("Helvetica", 30), wraplength=600)
+        label = tk.Label(popup, text=toPrompt + "\n(Press OK to close!)", bg="#92B7D6", fg="black", font=("Helvetica", 30), wraplength=600)
         label.pack(pady=20)
 
         ## BUTTON
