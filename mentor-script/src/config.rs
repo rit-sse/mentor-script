@@ -80,7 +80,7 @@ impl Config {
     /// This will open the "songs" folder in the default file explorer, provided the
     /// folder exists and the platform is supported.
     /// ```
-    fn open_songs_folder() {
+    pub fn open_songs_folder() {
         let mut dir = std::env::current_exe().unwrap();
         dir.pop();
         dir.push("songs");

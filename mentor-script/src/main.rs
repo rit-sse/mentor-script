@@ -23,7 +23,6 @@ fn main() -> ! {
             .with_title("Mentor Script")
             .with_maximized(true)
             .with_resizable(true)
-            .with_always_on_top()
             .with_decorations(true),
         vsync: true,
         multisampling: 0,

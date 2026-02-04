@@ -119,7 +119,7 @@ impl eframe::App for MentorApp {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         self.update_state();
         if ctx.input(|i| i.key_pressed(egui::Key::A)) {
-            self.state = ReminderState::Active(CheckType::HalfHour);
+            self.state = ReminderState::Active(CheckType::Hour);
             self.trigger_consumed = true;
         }
 
@@ -147,24 +147,41 @@ impl eframe::App for MentorApp {
                         ReminderState::Pending(check) => {
                             let (_, minutes_until) = minutes_until_next_check(now);
 
-                            ui.label(egui::RichText::new("Upcoming Check")
-                                .color(Color32::from_hex("#f39c12").unwrap())
-                                .size(28.0)
-                                .strong());
-                            ui.label(egui::RichText::new(format!("{} in {} minute{}",
-                                check,
-                                minutes_until,
-                                if minutes_until == 1 { "" } else { "s" }
-                            ))
-                                .color(Color32::from_hex("#23F123").unwrap())
-                                .size(20.0));
+                            // Convert "minutes until next check (rounded down to minute)" into seconds-until.
+                            // If next check is at the next minute boundary, this works well:
+                            // seconds_until = minutes_until*60 - current_seconds.
+                            let seconds_until =
+                                (minutes_until * 60 - now.second() as i64).max(0);
 
-                            // Progress bar
+                            let mins = seconds_until / 60;
+                            let secs = seconds_until % 60;
+
+                            ui.label(
+                                egui::RichText::new("Upcoming Check")
+                                    .color(Color32::from_hex("#f39c12").unwrap())
+                                    .size(28.0)
+                                    .strong(),
+                            );
+
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "{} in {}:{:02}",
+                                    check, mins, secs
+                                ))
+                                .color(Color32::from_hex("#23F123").unwrap())
+                                .size(20.0),
+                            );
+
+                            // Progress bar over the 5-minute pending window (300s).
                             ui.add_space(10.0);
-                            let progress = 1.0 - (minutes_until as f32 / 5.0);
-                            ui.add(egui::ProgressBar::new(progress)
-                                .desired_width(200.0)
-                                .show_percentage());
+                            let total_pending_seconds = 5.0 * 60.0;
+                            let progress = 1.0 - (seconds_until as f32 / total_pending_seconds);
+                            let progress = progress.clamp(0.0, 1.0);
+
+                            ui.add(
+                                egui::ProgressBar::new(progress)
+                                    .desired_width(200.0),
+                            );
                         }
 
                         ReminderState::Active(check) => {
@@ -246,11 +263,38 @@ impl eframe::App for MentorApp {
                         },
                     );
                 });
+
+                // Add small "Open Songs Folder" button in bottom right corner
+                let rect = ctx.content_rect();
+                let button_size = egui::vec2(140.0, 35.0);
+                let margin = 15.0;
+                #[allow(deprecated)]
+                ui.allocate_ui_at_rect(
+                    egui::Rect::from_min_size(
+                        egui::Pos2::new(
+                            rect.max.x - button_size.x - margin,
+                            rect.max.y - button_size.y - margin
+                        ),
+                        button_size,
+                    ),
+                    |ui| {
+                        ui.horizontal_centered(|ui| { let folder_button = egui::Button::new(
+                            egui::RichText::new("📁 Songs").size(18.0)
+                        )
+                            .fill(Color32::from_rgba_unmultiplied(52, 152, 219, 180))
+                            .min_size(button_size)
+                            .corner_radius(8.0);
+
+                            if ui.add(folder_button).clicked() {
+                                Config::open_songs_folder();
+                            }})
+                    },
+                );
             });
 
         let repaint_delay = match self.state {
             ReminderState::Idle => Duration::from_millis(33),      // smooth breathing
-            ReminderState::Pending(_) => Duration::from_millis(100),
+            ReminderState::Pending(_) => Duration::from_secs(1), // repaint once per second
             ReminderState::Active(_) => Duration::from_millis(33), // smooth pulsing
         };
 
@@ -260,4 +304,3 @@ impl eframe::App for MentorApp {
         self.audio = None; // Safely drop audio stream
     }
 }
-
