@@ -94,7 +94,7 @@ impl MentorApp {
 
 
     /// Returns a dynamic, breathing RGB effect background
-    fn background_color(&self, t: f64) -> egui::Color32 {
+    fn background_color(&self, t: f64) -> Color32 {
         let speed = 0.2;
         let phase = t * speed;
 
@@ -106,7 +106,7 @@ impl MentorApp {
         let base = 30.0;
         let range = 40.0;
 
-        egui::Color32::from_rgb(
+        Color32::from_rgb(
             (base + r * range) as u8,
             (base + g * range) as u8,
             (base + b * range) as u8,
@@ -142,38 +142,88 @@ impl eframe::App for MentorApp {
                     ui.add_space(10.0);
 
                     match self.state {
-                        ReminderState::Idle => {
-                            ui.label("All caught up!");
-                        }
+                        ReminderState::Idle => {}
 
                         ReminderState::Pending(check) => {
-                            ui.label("Upcoming check");
-                            ui.label(format!("{} coming up!", check));
+                            let (_, minutes_until) = minutes_until_next_check(now);
+
+                            ui.label(egui::RichText::new("Upcoming Check")
+                                .color(Color32::from_hex("#f39c12").unwrap())
+                                .size(28.0)
+                                .strong());
+                            ui.label(egui::RichText::new(format!("{} in {} minute{}",
+                                check,
+                                minutes_until,
+                                if minutes_until == 1 { "" } else { "s" }
+                            ))
+                                .color(Color32::from_hex("#23F123").unwrap())
+                                .size(20.0));
+
+                            // Progress bar
+                            ui.add_space(10.0);
+                            let progress = 1.0 - (minutes_until as f32 / 5.0);
+                            ui.add(egui::ProgressBar::new(progress)
+                                .desired_width(200.0)
+                                .show_percentage());
                         }
 
                         ReminderState::Active(check) => {
-                            ui.heading("Time to check in");
-                            ui.label(format!("{}!", check));
+                            // Pulsing effect for heading
+                            let pulse = (time * 2.0).sin() * 0.15 + 0.85;
+                            let heading_alpha = (pulse * 255.0) as u8;
 
-                            ui.add_space(40.0);
+                            ui.heading(egui::RichText::new("⚠ Time to check in! ⚠")
+                                .color(Color32::from_rgba_unmultiplied(35, 241, 35, heading_alpha))
+                                .size(48.0));
+                            ui.label(egui::RichText::new(format!("{}", check))
+                                .color(Color32::from_hex("#23F123").unwrap())
+                                .size(24.0));
 
-                            if ui.add_sized([120.0, 60.0], egui::Button::new("Open Form")).clicked() {
-                                let url = match check {
-                                    CheckType::Hour => &self.config.hourly_link,
-                                    CheckType::HalfHour => &self.config.thirty_link,
-                                };
+                            ui.add_space(60.0);
 
-                                let _ = webbrowser::open(url);
-                            }
+                            // Centered button layout using relative spacing
+                            ui.horizontal(|ui| {
+                                // Center the buttons horizontally
+                                let available_width = ui.available_width();
+                                let button_width = 120.0;
+                                let gap = 20.0;
+                                let total_width = button_width * 2.0 + gap;
+                                let left_padding = (available_width - total_width) / 2.0;
 
-                            ui.add_space(40.0);
+                                ui.add_space(left_padding);
 
-                            if ui.add_sized([120.0, 60.0], egui::Button::new("Checked" )).clicked() {
-                                if let Some(sink) = self.current_sink.take() {
-                                    sink.stop();
+                                let open_button = egui::Button::new(
+                                    egui::RichText::new("Open Form").size(16.0).strong()
+                                )
+                                .fill(Color32::from_hex("#3498db").unwrap())
+                                .min_size(egui::vec2(button_width, 60.0))
+                                .corner_radius(8.0);
+
+                                if ui.add(open_button).clicked() {
+                                    let url = match check {
+                                        CheckType::Hour => &self.config.hourly_link,
+                                        CheckType::HalfHour => &self.config.thirty_link,
+                                    };
+
+                                    let _ = webbrowser::open(url);
                                 }
-                                self.state = ReminderState::Idle;
-                            }
+
+                                ui.add_space(gap);
+
+                                let checked_button = egui::Button::new(
+                                    egui::RichText::new("Checked").size(16.0).strong()
+                                )
+                                .fill(Color32::from_hex("#27ae60").unwrap())
+                                .min_size(egui::vec2(button_width, 60.0))
+                                .corner_radius(8.0);
+
+                                if ui.add(checked_button).clicked() {
+                                    if let Some(sink) = self.current_sink.take() {
+                                        sink.stop();
+                                    }
+                                    self.state = ReminderState::Idle;
+                                }
+                            });
                         }
                     }
 
@@ -195,15 +245,13 @@ impl eframe::App for MentorApp {
                             );
                         },
                     );
-
-
                 });
             });
 
         let repaint_delay = match self.state {
             ReminderState::Idle => Duration::from_millis(33),      // smooth breathing
             ReminderState::Pending(_) => Duration::from_millis(100),
-            ReminderState::Active(_) => Duration::from_millis(500),
+            ReminderState::Active(_) => Duration::from_millis(33), // smooth pulsing
         };
 
         ctx.request_repaint_after(repaint_delay);
