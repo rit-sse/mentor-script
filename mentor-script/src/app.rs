@@ -155,7 +155,9 @@ impl eframe::App for MentorApp {
                             ui.heading("Time to check in");
                             ui.label(format!("{}!", check));
 
-                            if ui.button("Open Form").clicked() {
+                            ui.add_space(40.0);
+
+                            if ui.add_sized([120.0, 60.0], egui::Button::new("Open Form")).clicked() {
                                 let url = match check {
                                     CheckType::Hour => &self.config.hourly_link,
                                     CheckType::HalfHour => &self.config.thirty_link,
@@ -164,7 +166,9 @@ impl eframe::App for MentorApp {
                                 let _ = webbrowser::open(url);
                             }
 
-                            if ui.button("Checked").clicked() {
+                            ui.add_space(40.0);
+
+                            if ui.add_sized([120.0, 60.0], egui::Button::new("Checked" )).clicked() {
                                 if let Some(sink) = self.current_sink.take() {
                                     sink.stop();
                                 }
@@ -181,13 +185,13 @@ impl eframe::App for MentorApp {
                     ui.allocate_ui_at_rect(
                         egui::Rect::from_center_size(
                             center,
-                            egui::vec2(300.0, 80.0),
+                            egui::vec2(600.0, 200.0),
                         ),
                         |ui| {
                             ui.label(egui::RichText::new(&self.config.mentor_text)
                                 .color(Color32::from_hex("#23F123").unwrap())
                                 .strong()
-                                .size(24.0)
+                                .size(48.0)
                             );
                         },
                     );
