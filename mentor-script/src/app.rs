@@ -60,6 +60,7 @@ impl MentorApp {
         if now.hour() < 10 || now.hour() >= 18 {
             self.state = ReminderState::Idle;
             self.after_hours = true;
+            return;
         } else {
             self.after_hours = false;
         }
