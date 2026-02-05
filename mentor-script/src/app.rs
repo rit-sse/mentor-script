@@ -32,6 +32,7 @@ pub struct MentorApp {
     trigger_consumed: bool,
     audio: Option<Audio>,
     current_sink: Option<Sink>,
+    after_hours: bool,
 }
 
 impl MentorApp {
@@ -43,6 +44,7 @@ impl MentorApp {
             trigger_consumed: false,
             audio: None,
             current_sink: None,
+            after_hours: false,
         }
     }
 
@@ -53,6 +55,14 @@ impl MentorApp {
 
         let now = Local::now();
         let current_trigger = check_time();
+
+        // After hours
+        if now.hour() < 10 || now.hour() >= 18 {
+            self.state = ReminderState::Idle;
+            self.after_hours = true;
+        } else {
+            self.after_hours = false;
+        }
 
         // Reset consumption once we're no longer on a trigger minute.
         if current_trigger.is_none() {
@@ -112,7 +122,6 @@ impl MentorApp {
             (base + b * range) as u8,
         )
     }
-
 }
 
 impl eframe::App for MentorApp {
@@ -141,8 +150,34 @@ impl eframe::App for MentorApp {
 
                     ui.add_space(10.0);
 
+                    // Reserve a consistent "header area" that we can fill differently based on time/state.
+                    let rect = ctx.content_rect();
+                    let center = rect.center();
+                    let header_rect = egui::Rect::from_center_size(center, egui::vec2(600.0, 200.0));
+
                     match self.state {
-                        ReminderState::Idle => {}
+                        ReminderState::Idle => {
+                            // After hours in lab
+                            #[allow(deprecated)]
+                            ui.allocate_ui_at_rect(header_rect, |ui| {
+                                ui.vertical_centered(|ui| {
+                                    if self.after_hours {
+                                        ui.heading(
+                                            RichText::new("After hours 😎")
+                                                .color(Color32::from_hex("#3c7a89").unwrap())
+                                                .size(42.0)
+                                                .strong(),
+                                        );
+                                    } else {
+                                        ui.label(egui::RichText::new(&self.config.mentor_text)
+                                            .color(Color32::from_hex("#23F123").unwrap())
+                                            .strong()
+                                            .size(48.0)
+                                        );
+                                    };
+                                });
+                            });
+                        }
 
                         ReminderState::Pending(check) => {
                             let (_, minutes_until) = minutes_until_next_check(now);
@@ -168,8 +203,8 @@ impl eframe::App for MentorApp {
                                     "{} in {}:{:02}",
                                     check, mins, secs
                                 ))
-                                .color(Color32::from_hex("#23F123").unwrap())
-                                .size(20.0),
+                                    .color(Color32::from_hex("#23F123").unwrap())
+                                    .size(20.0),
                             );
 
                             // Progress bar over the 5-minute pending window (300s).
@@ -212,9 +247,9 @@ impl eframe::App for MentorApp {
                                 let open_button = egui::Button::new(
                                     egui::RichText::new("Open Form").size(16.0).strong()
                                 )
-                                .fill(Color32::from_hex("#3498db").unwrap())
-                                .min_size(egui::vec2(button_width, 60.0))
-                                .corner_radius(8.0);
+                                    .fill(Color32::from_hex("#3498db").unwrap())
+                                    .min_size(egui::vec2(button_width, 60.0))
+                                    .corner_radius(8.0);
 
                                 if ui.add(open_button).clicked() {
                                     let url = match check {
@@ -230,9 +265,9 @@ impl eframe::App for MentorApp {
                                 let checked_button = egui::Button::new(
                                     egui::RichText::new("Checked").size(16.0).strong()
                                 )
-                                .fill(Color32::from_hex("#27ae60").unwrap())
-                                .min_size(egui::vec2(button_width, 60.0))
-                                .corner_radius(8.0);
+                                    .fill(Color32::from_hex("#27ae60").unwrap())
+                                    .min_size(egui::vec2(button_width, 60.0))
+                                    .corner_radius(8.0);
 
                                 if ui.add(checked_button).clicked() {
                                     if let Some(sink) = self.current_sink.take() {
@@ -246,22 +281,6 @@ impl eframe::App for MentorApp {
 
                     ui.add_space(20.0);
 
-                    let rect = ctx.content_rect();
-                    let center = rect.center();
-                    #[allow(deprecated)]
-                    ui.allocate_ui_at_rect(
-                        egui::Rect::from_center_size(
-                            center,
-                            egui::vec2(600.0, 200.0),
-                        ),
-                        |ui| {
-                            ui.label(egui::RichText::new(&self.config.mentor_text)
-                                .color(Color32::from_hex("#23F123").unwrap())
-                                .strong()
-                                .size(48.0)
-                            );
-                        },
-                    );
                 });
 
                 // Add small "Open Songs Folder" button in bottom right corner
@@ -273,21 +292,23 @@ impl eframe::App for MentorApp {
                     egui::Rect::from_min_size(
                         egui::Pos2::new(
                             rect.max.x - button_size.x - margin,
-                            rect.max.y - button_size.y - margin
+                            rect.max.y - button_size.y - margin,
                         ),
                         button_size,
                     ),
                     |ui| {
-                        ui.horizontal_centered(|ui| { let folder_button = egui::Button::new(
-                            egui::RichText::new("📁 Songs").size(18.0)
-                        )
-                            .fill(Color32::from_rgba_unmultiplied(52, 152, 219, 180))
-                            .min_size(button_size)
-                            .corner_radius(8.0);
+                        ui.horizontal_centered(|ui| {
+                            let folder_button = egui::Button::new(
+                                egui::RichText::new("📁 Songs").size(18.0)
+                            )
+                                .fill(Color32::from_rgba_unmultiplied(52, 152, 219, 180))
+                                .min_size(button_size)
+                                .corner_radius(8.0);
 
                             if ui.add(folder_button).clicked() {
                                 Config::open_songs_folder();
-                            }})
+                            }
+                        })
                     },
                 );
             });
