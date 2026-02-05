@@ -21,9 +21,8 @@ fn main() -> ! {
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
             .with_title("Mentor Script")
-            .with_inner_size([640.0, 420.0])
-            .with_resizable(false)
-            .with_always_on_top()
+            .with_maximized(true)
+            .with_resizable(true)
             .with_decorations(true),
         vsync: true,
         multisampling: 0,
