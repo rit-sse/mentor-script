@@ -13,6 +13,7 @@ import webbrowser
 MENTORSCRIPT_EVERYHOUR_URL = ""
 MENTORSCRIPT_EVERY30_URL = ""
 SONG_FOLDER = ""
+
 MENTOR_TEXT = ""
 
 HOURLY = 55
@@ -34,6 +35,9 @@ with open("links.json", "r") as f:
 
 # Debugging purposes to make sure all songs are gathered properly
 print(os.listdir(SONG_FOLDER))
+SONG_LIST = os.listdir(SONG_FOLDER)
+random.shuffle(SONG_LIST)
+SONG_QUEUE = list(SONG_LIST)
 
 class MentorScriptApp():
     """The Tkinter app that runs the Mentor Script"""
@@ -63,7 +67,13 @@ class MentorScriptApp():
         label.pack(pady=20)
 
         ## BUTTON
-        self.currentSong = mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
+        # self.currentSong = mixer.Sound("./songs/" + random.choice(os.listdir("./songs")))
+        if len(SONG_QUEUE) == 0:
+            for song in SONG_LIST:
+                SONG_QUEUE.append(song)
+            random.shuffle(SONG_QUEUE)
+
+        self.currentSong = mixer.Sound("./songs/" + (SONG_QUEUE.pop(0)))
         self.currentSong.play()
         def callback():
             popup.destroy()
