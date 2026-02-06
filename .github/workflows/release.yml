@@ -1,4 +1,4 @@
-name: Build Linux x86_64
+name: Build and Release
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
       - "v*"
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -28,19 +27,42 @@ jobs:
         run: strip target/release/mentor-script
         working-directory: mentor-script
 
+      - name: Prepare artifact
+        run: |
+          mkdir -p dist
+          cp mentor-script/target/release/mentor-script dist/mentor-script-x86_64-linux
+          chmod +x dist/mentor-script-x86_64-linux
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mentor-script-linux-x86_64
-          path: mentor-script/target/release/mentor-script
+          path: dist/mentor-script-x86_64-linux
 
-      - name: Prepare artifact
+  release:
+    needs: [build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Organize artifacts
         run: |
-          mkdir dist
-          cp mentor-script/target/release/mentor-script dist/mentor-script-x86_64-linux
-          chmod +x dist/mentor-script-x86_64-linux
+          mkdir -p dist
+          find artifacts -type f -name "mentor-script-*" -exec cp {} dist/ \;
+          ls -lh dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/mentor-script-x86_64-linux
+          files: dist/mentor-script-*
+          generate_release_notes: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
