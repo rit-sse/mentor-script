@@ -9,7 +9,7 @@ use crate::sound::Audio;
 use chrono::{Local, Timelike};
 use eframe::egui::{CentralPanel, Context};
 use eframe::{egui, Frame};
-use egui::{Color32, RichText};
+use egui::{vec2, Button, Color32, RichText};
 use rand::seq::IndexedRandom;
 use rodio::Sink;
 
@@ -105,13 +105,13 @@ impl MentorApp {
 
 
     /// Returns a dynamic, breathing RGB effect background
-    fn background_color(&self, t: f64) -> Color32 {
-        let speed = 0.2;
-        let phase = t * speed;
+    fn background_color(&self, t: f32) -> Color32 {
+        let speed: f32 = 0.2;
+        let phase: f32 = t * speed;
 
-        let r = (phase.sin() * 0.5 + 0.5) as f32;
-        let g = ((phase + 2.0).sin() * 0.5 + 0.5) as f32;
-        let b = ((phase + 4.0).sin() * 0.5 + 0.5) as f32;
+        let r = phase.sin() * 0.5 + 0.5;
+        let g = (phase + 2.0).sin() * 0.5 + 0.5;
+        let b = (phase + 4.0).sin() * 0.5 + 0.5;
 
         // soften it
         let base = 30.0;
@@ -122,6 +122,11 @@ impl MentorApp {
             (base + g * range) as u8,
             (base + b * range) as u8,
         )
+    }
+
+    fn invert_color(color: Color32) -> Color32 {
+        let [r, g, b, a] = color.to_array();
+        Color32::from_rgba_unmultiplied(255 - r, 255 - g, 255 - b, a)
     }
 }
 
@@ -136,10 +141,13 @@ impl eframe::App for MentorApp {
         let now = Local::now();
         let _minute = now.minute();
 
-        let time = ctx.input(|i| i.time); // variable time for dynamic color
+        let time: f32 = ctx.input(|i| i.time) as f32; // variable time for dynamic color
+        let bg_color = self.background_color(time);
+        let time_color = Self::invert_color(bg_color);
+
 
         CentralPanel::default()
-            .frame(egui::Frame::new().fill(self.background_color(time)))
+            .frame(egui::Frame::new().fill(bg_color))
             .show(ctx, |ui| {
                 ui.vertical_centered(|ui| {
                     ui.add_space(20.0);
@@ -147,7 +155,10 @@ impl eframe::App for MentorApp {
                         "{:02}:{:02}",
                         now.hour(),
                         now.minute(),
-                    )).size(42.0).color(Color32::from_hex("#000000").unwrap()));
+                    ))
+                        .size(42.0)
+                        .color(time_color)
+                    );
 
                     ui.add_space(10.0);
 
@@ -170,7 +181,7 @@ impl eframe::App for MentorApp {
                                                 .strong(),
                                         );
                                     } else {
-                                        ui.label(egui::RichText::new(&self.config.mentor_text)
+                                        ui.label(RichText::new(&self.config.mentor_text)
                                             .color(Color32::from_hex("#23F123").unwrap())
                                             .strong()
                                             .size(48.0)
@@ -193,14 +204,14 @@ impl eframe::App for MentorApp {
                             let secs = seconds_until % 60;
 
                             ui.label(
-                                egui::RichText::new("Upcoming Check")
+                                RichText::new("Upcoming Check")
                                     .color(Color32::from_hex("#f39c12").unwrap())
                                     .size(28.0)
                                     .strong(),
                             );
 
                             ui.label(
-                                egui::RichText::new(format!(
+                                RichText::new(format!(
                                     "{} in {}:{:02}",
                                     check, mins, secs
                                 ))
@@ -225,10 +236,10 @@ impl eframe::App for MentorApp {
                             let pulse = (time * 2.0).sin() * 0.15 + 0.85;
                             let heading_alpha = (pulse * 255.0) as u8;
 
-                            ui.heading(egui::RichText::new("⚠ Time to check in! ⚠")
+                            ui.heading(RichText::new("⚠ Time to check in! ⚠")
                                 .color(Color32::from_rgba_unmultiplied(35, 241, 35, heading_alpha))
                                 .size(48.0));
-                            ui.label(egui::RichText::new(format!("{}", check))
+                            ui.label(RichText::new(format!("{}", check))
                                 .color(Color32::from_hex("#23F123").unwrap())
                                 .size(24.0));
 
@@ -246,7 +257,7 @@ impl eframe::App for MentorApp {
                                 ui.add_space(left_padding);
 
                                 let open_button = egui::Button::new(
-                                    egui::RichText::new("Open Form").size(16.0).strong()
+                                    RichText::new("Open Form").size(16.0).strong()
                                 )
                                     .fill(Color32::from_hex("#3498db").unwrap())
                                     .min_size(egui::vec2(button_width, 60.0))
@@ -263,16 +274,31 @@ impl eframe::App for MentorApp {
 
                                 ui.add_space(gap);
 
-                                let checked_button = egui::Button::new(
-                                    egui::RichText::new("Checked").size(16.0).strong()
+                                let checked_button = Button::new(
+                                    RichText::new("Checked").size(16.0).strong()
                                 )
                                     .fill(Color32::from_hex("#27ae60").unwrap())
                                     .min_size(egui::vec2(button_width, 60.0))
                                     .corner_radius(8.0);
 
+                                let pause_button: Button = Button::new(
+                                    RichText::new("Pause Music").size(16.0).strong()
+                                ).fill(Color32::from_hex("#780000").unwrap())
+                                    .min_size(vec2(button_width, 100.0))
+                                    .corner_radius(8.0);
+
+                                if ui.add(pause_button).clicked() && let Some(sink) = self.current_sink.as_ref() {
+                                        if sink.is_paused() {
+                                            sink.play();
+                                        } else {
+                                            sink.pause();
+                                        }
+                                }
+
                                 if ui.add(checked_button).clicked() {
                                     if let Some(sink) = self.current_sink.take() {
                                         sink.stop();
+                                        sink.detach();
                                     }
                                     self.state = ReminderState::Idle;
                                 }
@@ -300,7 +326,7 @@ impl eframe::App for MentorApp {
                     |ui| {
                         ui.horizontal_centered(|ui| {
                             let folder_button = egui::Button::new(
-                                egui::RichText::new("📁 Songs").size(18.0)
+                                RichText::new("📁 Songs").size(18.0)
                             )
                                 .fill(Color32::from_rgba_unmultiplied(52, 152, 219, 180))
                                 .min_size(button_size)
