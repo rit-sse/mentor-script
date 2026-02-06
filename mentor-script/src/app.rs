@@ -246,62 +246,85 @@ impl eframe::App for MentorApp {
                             ui.add_space(60.0);
 
                             // Centered button layout using relative spacing
-                            ui.horizontal(|ui| {
-                                // Center the buttons horizontally
+                            ui.vertical(|ui| {
+                                // shared layout constants
                                 let available_width = ui.available_width();
                                 let button_width = 120.0;
                                 let gap = 20.0;
                                 let total_width = button_width * 2.0 + gap;
                                 let left_padding = (available_width - total_width) / 2.0;
 
-                                ui.add_space(left_padding);
+                                // Row 1: Open Form + Checked
+                                ui.horizontal(|ui| {
+                                    ui.add_space(left_padding);
 
-                                let open_button = egui::Button::new(
-                                    RichText::new("Open Form").size(16.0).strong()
-                                )
-                                    .fill(Color32::from_hex("#3498db").unwrap())
-                                    .min_size(egui::vec2(button_width, 60.0))
-                                    .corner_radius(8.0);
+                                    let open_button = egui::Button::new(
+                                        RichText::new("Open Form").size(16.0).strong()
+                                    )
+                                        .fill(Color32::from_hex("#3498db").unwrap())
+                                        .min_size(egui::vec2(button_width, 60.0))
+                                        .corner_radius(8.0);
 
-                                if ui.add(open_button).clicked() {
-                                    let url = match check {
-                                        CheckType::Hour => &self.config.hourly_link,
-                                        CheckType::HalfHour => &self.config.thirty_link,
-                                    };
+                                    if ui.add(open_button).clicked() {
+                                        let url = match check {
+                                            CheckType::Hour => &self.config.hourly_link,
+                                            CheckType::HalfHour => &self.config.thirty_link,
+                                        };
 
-                                    let _ = webbrowser::open(url);
-                                }
-
-                                ui.add_space(gap);
-
-                                let checked_button = Button::new(
-                                    RichText::new("Checked").size(16.0).strong()
-                                )
-                                    .fill(Color32::from_hex("#27ae60").unwrap())
-                                    .min_size(egui::vec2(button_width, 60.0))
-                                    .corner_radius(8.0);
-
-                                let pause_button: Button = Button::new(
-                                    RichText::new("Pause Music").size(16.0).strong()
-                                ).fill(Color32::from_hex("#780000").unwrap())
-                                    .min_size(vec2(button_width, 100.0))
-                                    .corner_radius(8.0);
-
-                                if ui.add(pause_button).clicked() && let Some(sink) = self.current_sink.as_ref() {
-                                        if sink.is_paused() {
-                                            sink.play();
-                                        } else {
-                                            sink.pause();
-                                        }
-                                }
-
-                                if ui.add(checked_button).clicked() {
-                                    if let Some(sink) = self.current_sink.take() {
-                                        sink.stop();
-                                        sink.detach();
+                                        let _ = webbrowser::open(url);
                                     }
-                                    self.state = ReminderState::Idle;
-                                }
+
+                                    ui.add_space(gap);
+
+                                    let checked_button = Button::new(
+                                        RichText::new("Checked").size(16.0).strong()
+                                    )
+                                        .fill(Color32::from_hex("#27ae60").unwrap())
+                                        .min_size(egui::vec2(button_width, 60.0))
+                                        .corner_radius(8.0);
+
+                                    if ui.add(checked_button).clicked() {
+                                        if let Some(sink) = self.current_sink.take() {
+                                            sink.stop();
+                                            sink.detach();
+                                        }
+                                        self.state = ReminderState::Idle;
+                                    }
+                                });
+
+                                ui.add_space(14.0);
+
+                                // Row 2: Pause/Resume centered under the gap between the two buttons
+                                ui.horizontal(|ui| {
+                                    // center is left_padding + button_width + (gap / 2.0)
+                                    let pause_center_x = left_padding + button_width + (gap / 2.0);
+
+                                    let is_paused = self
+                                        .current_sink
+                                        .as_ref()
+                                        .map(|s| s.is_paused())
+                                        .unwrap_or(false);
+
+                                    let pause_text = if is_paused { "Resume Music" } else { "Pause Music" };
+
+                                    let pause_button = Button::new(
+                                        RichText::new(pause_text).size(16.0).strong()
+                                    )
+                                        .fill(Color32::from_hex("#780000").unwrap())
+                                        .min_size(vec2(button_width, 60.0))
+                                        .corner_radius(8.0);
+
+                                    // place left edge so the button is centered under the middle gap
+                                    ui.add_space((pause_center_x - (button_width / 2.0)).max(0.0));
+
+                                    if ui.add(pause_button).clicked() && let Some(sink) = self.current_sink.as_ref() {
+                                            if sink.is_paused() {
+                                                sink.play();
+                                            } else {
+                                                sink.pause();
+                                            }
+                                        }
+                                });
                             });
                         }
                     }
