@@ -29,9 +29,9 @@ cd mentor-script
 Create "config.json" in the mentor script directory (/usr/local/bin/). It should use this format:
 ```json
 {
-  "MENTOR_TEXT": "Hello Mentor!",
-  "MENTORSCRIPT_EVERYHOUR_URL": "HOURLY_GOOGLE_FORMS",
-  "MENTORSCRIPT_EVERY30_URL": "30_MIN_GOOGLE_FORMS"
+  "mentor_text": "Hello Mentor!",
+  "hourly_link": "HOURLY_GOOGLE_FORMS",
+  "thirty_link": "30_MIN_GOOGLE_FORMS"
 }
 ```
 ### Python
