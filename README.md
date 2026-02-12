@@ -1,5 +1,5 @@
 # Mentor Script
-This is the repository for the mentor script!
+This is the repository for the script that runs on the mentor computer in the SSE Lab!
 
 ## Installation
 
