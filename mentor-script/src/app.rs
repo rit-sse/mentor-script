@@ -358,7 +358,7 @@ impl eframe::App for MentorApp {
                                     .corner_radius(8.0);
 
                             if ui.add(folder_button).clicked() {
-                                Config::open_songs_folder();
+                                Config::open_songs_folder(&self.config);
                             }
                         })
                     },
