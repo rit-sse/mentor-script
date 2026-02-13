@@ -20,7 +20,7 @@ pub struct Config {
     /// Folder containing audio files (can be anywhere).
     ///
     /// If relative, it is resolved relative to the executable's directory.
-    #[serde(default)]
+    #[serde(default, alias = "SONG_FOLDER")]
     pub songs_dir: PathBuf,
 
     /// Audio files discovered from `songs_dir`
@@ -47,15 +47,26 @@ impl Config {
         // Resolve songs_dir:
         // - if missing/empty => default to <exe_dir>/songs
         // - if relative => resolve relative to exe_dir
-        if config.songs_dir.as_os_str().is_empty() {
-            config.songs_dir = exe_dir.join("songs");
-        } else if config.songs_dir.is_relative() {
-            config.songs_dir = exe_dir.join(&config.songs_dir);
-        }
+        // - always produce an absolute path
+        config.songs_dir = Self::resolve_songs_dir(&exe_dir, &config.songs_dir);
 
         config.songs = Self::load_songs_from(&config.songs_dir);
 
         Some(config)
+    }
+
+    fn resolve_songs_dir(config_dir: &Path, configured: &Path) -> PathBuf {
+        let resolved = if configured.as_os_str().is_empty() {
+            config_dir.join("songs")
+        } else if configured.is_relative() {
+            config_dir.join(configured)
+        } else {
+            configured.to_path_buf()
+        };
+
+        // Canonicalize when possible for a normalized full path. If the folder
+        // doesn't exist yet, keep the resolved absolute path as-is.
+        fs::canonicalize(&resolved).unwrap_or(resolved)
     }
 
     /// Scans a folder for supported audio files (.mp3, .wav, .ogg, .flac)
