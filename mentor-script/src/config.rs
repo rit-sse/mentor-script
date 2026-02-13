@@ -2,10 +2,10 @@
 //!
 //! Loads application settings from config.json located next to the executable.
 
-use std::fs;
-use std::path::PathBuf;
-use std::process::Command;
 use serde::Deserialize;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 /// Application configuration loaded from config.json
 #[derive(Debug, Deserialize, Clone)]
@@ -16,13 +16,20 @@ pub struct Config {
     pub hourly_link: String,
     /// URL to open for 30-minute check-ins
     pub thirty_link: String,
-    /// Audio files loaded from the songs folder
+
+    /// Folder containing audio files (can be anywhere).
+    ///
+    /// If relative, it is resolved relative to the executable's directory.
     #[serde(default)]
+    pub songs_dir: PathBuf,
+
+    /// Audio files discovered from `songs_dir`
+    #[serde(skip)]
     pub songs: Vec<PathBuf>,
 }
 
 impl Config {
-    /// Loads configuration from config.json and discovers audio files from songs folder
+    /// Loads configuration from config.json and discovers audio files from songs_dir
     pub fn load() -> Option<Self> {
         let exe_dir: PathBuf = std::env::current_exe()
             .expect("Failed to get executable path")
@@ -32,26 +39,30 @@ impl Config {
 
         let path = exe_dir.join("config.json");
 
-        let raw = fs::read_to_string(&path)
-            .unwrap();
+        let raw = fs::read_to_string(&path).unwrap();
 
-        let mut config: Config = serde_json::from_str(&raw)
-            .expect("Invalid JSON in config.json");
+        let mut config: Config =
+            serde_json::from_str(&raw).expect("Invalid JSON in config.json");
 
-        config.songs = Self::load_songs();
+        // Resolve songs_dir:
+        // - if missing/empty => default to <exe_dir>/songs
+        // - if relative => resolve relative to exe_dir
+        if config.songs_dir.as_os_str().is_empty() {
+            config.songs_dir = exe_dir.join("songs");
+        } else if config.songs_dir.is_relative() {
+            config.songs_dir = exe_dir.join(&config.songs_dir);
+        }
+
+        config.songs = Self::load_songs_from(&config.songs_dir);
 
         Some(config)
     }
 
-    /// Scans the songs folder for supported audio files (.mp3, .wav, .ogg, .flac)
-    fn load_songs() -> Vec<PathBuf> {
-        let mut dir = std::env::current_exe().unwrap();
-        dir.pop();
-        dir.push("songs");
-
-        let entries = match fs::read_dir(&dir) {
+    /// Scans a folder for supported audio files (.mp3, .wav, .ogg, .flac)
+    fn load_songs_from(dir: &Path) -> Vec<PathBuf> {
+        let entries = match fs::read_dir(dir) {
             Ok(entries) => entries,
-            Err(_) => return Vec::new(), // songs folder missing -> no sounds
+            Err(_) => return Vec::new(), // folder missing/unreadable -> no sounds
         };
 
         entries
@@ -59,44 +70,23 @@ impl Config {
             .map(|e| e.path())
             .filter(|p| {
                 matches!(
-                p.extension().and_then(|e| e.to_str()),
-                Some("mp3" | "wav" | "ogg" | "flac")
-            )
+                    p.extension().and_then(|e| e.to_str()),
+                    Some("mp3" | "wav" | "ogg" | "flac")
+                )
             })
             .collect()
     }
 
-    /// ```rust
-    /// Opens the "songs" folder located in the same directory as the executable.
-    ///
-    /// This function uses platform-specific commands to open the "songs" folder:
-    /// - On **Windows**, it uses the `explorer` command.
-    /// - On **macOS**, it uses the `open` command.
-    /// - On **Linux**, it uses the `xdg-open` command.
-    ///
-    /// If the platform is unsupported or an error occurs while spawning the command,
-    /// a message will be printed to the console.
-    ///
-    /// This will open the "songs" folder in the default file explorer, provided the
-    /// folder exists and the platform is supported.
-    /// ```
-    pub fn open_songs_folder() {
-        let mut dir = std::env::current_exe().unwrap();
-        dir.pop();
-        dir.push("songs");
+    /// Opens the configured songs folder in the OS file explorer.
+    pub fn open_songs_folder(&self) {
+        let dir = &self.songs_dir;
+
         let spawn_result = if cfg!(target_os = "windows") {
-            Command::new("explorer")
-                .arg(dir)
-                .spawn()
+            Command::new("explorer").arg(dir).spawn()
         } else if cfg!(target_os = "macos") {
-            Command::new("open")
-                .arg(dir)
-                .spawn()
+            Command::new("open").arg(dir).spawn()
         } else if cfg!(target_os = "linux") {
-            // xdg-open is a common utility on Linux to open files/urls with the default app
-            Command::new("xdg-open")
-                .arg(dir)
-                .spawn()
+            Command::new("xdg-open").arg(dir).spawn()
         } else {
             println!("Unsupported operating system for opening file explorer automatically.");
             return;
@@ -105,7 +95,5 @@ impl Config {
         if let Err(e) = spawn_result {
             eprintln!("Failed to open songs folder: {e}");
         }
-
-        }
-
     }
+}
