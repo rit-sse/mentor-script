@@ -10,8 +10,8 @@ from pygame import mixer
 import pyautogui
 import webbrowser
 
-MENTORSCRIPT_EVERYHOUR_URL = ""
-MENTORSCRIPT_EVERY30_URL = ""
+MENTORSCRIPT_EVERYHOUR_URL = "https://sse.rit.edu/go/mentorfifty"
+MENTORSCRIPT_EVERY30_URL = "https://sse.rit.edu/go/mentorthirty"
 SONG_FOLDER = ""
 
 MENTOR_TEXT = ""
@@ -28,8 +28,6 @@ with open("links.json", "r") as f:
     else:
         ioText = f
     filein = json.loads(f.read())
-    MENTORSCRIPT_EVERYHOUR_URL = filein["MENTORSCRIPT_EVERYHOUR_URL"]
-    MENTORSCRIPT_EVERY30_URL = filein["MENTORSCRIPT_EVERY30_URL"]
     SONG_FOLDER = filein["SONG_FOLDER"]
     MENTOR_TEXT = filein["MENTOR_TEXT"]
 
@@ -136,7 +134,7 @@ class MentorScriptApp():
             minute = now.minute
             hour = now.hour
 
-            if not (hour > 10 or hour < 18):
+            if not (hour > 10 and hour < 18):
                 continue
             if minute == HOURLY and self.sentOutHourly != True:
                 print("Sent out the hourly!")
